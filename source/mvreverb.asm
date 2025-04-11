@@ -1,13 +1,47 @@
-        IDEAL
+;
+; Copyright (C) 1994-1995 Apogee Software, Ltd.
+; Copyright (C) 2023 Frenkel Smeijers
+;
+; This program is free software; you can redistribute it and/or
+; modify it under the terms of the GNU General Public License
+; as published by the Free Software Foundation; either version 2
+; of the License, or (at your option) any later version.
+;
+; This program is distributed in the hope that it will be useful,
+; but WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+; GNU General Public License for more details.
+;
+; You should have received a copy of the GNU General Public License
+; along with this program. If not, see <https://www.gnu.org/licenses/>.
+;
 
-        p386
-        MODEL  flat
+cpu 386
+        ; IDEAL
 
-        dataseg
-        CODESEG
+        ; p386
+        ; MODEL  flat
 
-        MASM
-        ALIGN 4
+        ; dataseg
+        ; CODESEG
+
+        ; MASM
+        ; ALIGN 4
+
+extern   _MV_Src
+extern   _MV_Dest
+extern   _MV_Volume
+extern   _MV_Count
+extern   _MV_Shift
+
+
+%ifidn __OUTPUT_FORMAT__, coff
+section .text public class=CODE USE32
+%elifidn __OUTPUT_FORMAT__, obj
+section _TEXT public class=CODE USE32
+%endif
+
+align 4
 
 ;================
 ;
@@ -20,24 +54,28 @@
 ; ebx - Volume table
 ; ecx - number of samples
 
-PROC    MV_16BitReverb_
-PUBLIC  MV_16BitReverb_
+global _MV_16BitReverb
+_MV_16BitReverb:
 
-        mov     esi, eax
+        mov     esi, [_MV_Src]
+        mov     edx, [_MV_Dest]
         lea     edi, [edx - 2]
+
+        mov     ebx, [_MV_Volume]
+        mov     ecx, [_MV_Count]
 
         ALIGN 4
 rev16loop:
-        movzx   eax, word ptr [esi]             ; get sample
+        movzx   eax, word [esi]             ; get sample
         add     edi, 2
 
         movzx   edx, ah
         sub     ah, ah
 
-        movsx   eax, byte ptr [2*eax+ebx+1]     ; volume translate low byte of sample
+        movsx   eax, byte [2*eax+ebx+1]     ; volume translate low byte of sample
         xor     edx, 80h
 
-        movsx   edx, word ptr [2*edx+ebx]       ; volume translate high byte of sample
+        movsx   edx, word [2*edx+ebx]       ; volume translate high byte of sample
         add     esi, 2
 
         lea     eax, [ eax + edx + 80h ]        ; mix high byte of sample
@@ -47,7 +85,7 @@ rev16loop:
         jnz     rev16loop                       ; loop
 
         ret
-ENDP    MV_16BitReverb_
+
 
 ;================
 ;
@@ -60,22 +98,26 @@ ENDP    MV_16BitReverb_
 ; ebx - Volume table
 ; ecx - number of samples
 
-PROC    MV_8BitReverb_
-PUBLIC  MV_8BitReverb_
+global _MV_8BitReverb
+_MV_8BitReverb:
 
-        mov     esi, eax
+        mov     esi, [_MV_Src]
+        mov     edx, [_MV_Dest]
         lea     edi, [edx - 1]
 
         xor     eax, eax
 
+        mov     ebx, [_MV_Volume]
+        mov     ecx, [_MV_Count]
+
         ALIGN 4
 rev8loop:
-;        movzx   eax, byte ptr [esi]             ; get sample
-        mov     al, byte ptr [esi]              ; get sample
+;        movzx   eax, byte [esi]             ; get sample
+        mov     al, byte [esi]              ; get sample
         inc     edi
 
-;        movsx   eax, byte ptr [2*eax+ebx]       ; volume translate sample
-        mov     al, byte ptr [2*eax+ebx]        ; volume translate sample
+;        movsx   eax, byte [2*eax+ebx]       ; volume translate sample
+        mov     al, byte [2*eax+ebx]        ; volume translate sample
         inc     esi
 
 ;        add     eax, 80h
@@ -86,7 +128,7 @@ rev8loop:
         jnz     rev8loop                        ; loop
 
         ret
-ENDP    MV_8BitReverb_
+
 
 ;================
 ;
@@ -99,18 +141,22 @@ ENDP    MV_8BitReverb_
 ; ebx - number of samples
 ; ecx - shift
 
-PROC    MV_16BitReverbFast_
-PUBLIC  MV_16BitReverbFast_
+global _MV_16BitReverbFast:
+_MV_16BitReverbFast:
 
-        mov     esi, eax
-        mov     eax,OFFSET rpatch16+3
+        mov     esi, [_MV_Src]
+        mov     eax,rpatch16+3
 
         mov     [eax],cl
+        mov     edx, [_MV_Dest]
         lea     edi, [edx - 2]
+
+        mov     ebx, [_MV_Count]
+        mov     ecx, [_MV_Shift]
 
         ALIGN 4
 frev16loop:
-        mov     ax, word ptr [esi]             ; get sample
+        mov     ax, word [esi]             ; get sample
         add     edi, 2
 
 rpatch16:
@@ -123,7 +169,7 @@ rpatch16:
         jnz     frev16loop                      ; loop
 
         ret
-ENDP    MV_16BITREVERBFAST_
+
 
 ;================
 ;
@@ -136,12 +182,15 @@ ENDP    MV_16BITREVERBFAST_
 ; ebx - number of samples
 ; ecx - shift
 
-PROC    MV_8BitReverbFast_
-PUBLIC  MV_8BitReverbFast_
-        mov     esi, eax
-        mov     eax,OFFSET rpatch8+2
+global _MV_8BitReverbFast
+_MV_8BitReverbFast:
+        mov     esi, [_MV_Src]
+        mov     eax,rpatch8+2
 
-        mov     edi, edx
+        mov     ebx, [_MV_Count]
+        mov     ecx, [_MV_Shift]
+
+        mov     edi, [_MV_Dest]
         mov     edx, 80h
 
         mov     [eax],cl
@@ -154,7 +203,7 @@ PUBLIC  MV_8BitReverbFast_
 
         ALIGN 4
 frev8loop:
-        mov     al, byte ptr [esi]             ; get sample
+        mov     al, byte [esi]             ; get sample
         inc     esi
 
         mov     ecx, eax
@@ -174,8 +223,3 @@ rpatch8:
         jnz     frev8loop                       ; loop
 
         ret
-ENDP    MV_8BITREVERBFAST_
-
-        ENDS
-
-        END

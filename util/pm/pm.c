@@ -30,10 +30,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <conio.h>
 #include <dos.h>
+#include <sys/nearptr.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include "music.h"
+
+// int   _argc = 0;
+// char **_argv = NULL;
 
 
 /*---------------------------------------------------------------------
@@ -42,14 +47,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 void  LoadTimbres( char *timbrefile );
 char *LoadMidi( char *filename );
-char *GetUserText( const char *parameter );
-int   CheckUserParm( const char *parameter );
+char *GetUserText( const char *parameter, int _argc, char **_argv );
+int   CheckUserParm( const char *parameter, int _argc, char **_argv );
 void  DefaultExtension( char *path, char *extension );
 void  TurnOffTextCursor( void );
 void  TurnOnTextCursor( void );
 
 #define TRUE  ( 1 == 1 )
-#define FALSE ( !TRUE )
+#define FALSE ( 1 != 1 )
 
 #define NUMCARDS 10
 
@@ -67,13 +72,15 @@ int SoundCardNums[] =
    Adlib, SoundScape, UltraSound
    };
 
+extern void  USER_InitArgs(int argc, char **argv);
+
 /*---------------------------------------------------------------------
    Function: main
 
    Sets up sound cards, calls the demo, and then cleans up.
 ---------------------------------------------------------------------*/
 
-void main
+int main
    (
    int argc,
    char *argv[]
@@ -84,7 +91,7 @@ void main
    int address;
    int status;
    char *SongPtr = NULL;
-   char *ptr;
+   const char *ptr;
    char  filename[ 128 ];
    char  timbrefile[ 128 ];
    int   gotopos = 0;
@@ -93,9 +100,11 @@ void main
    int   tick = 0;
    int   time = 0;
 
+   USER_InitArgs(argc, argv);
+
    printf( "\nPM   EMIDI Music Player   Version 1.21  Copyright (c) 1996 by Jim Dose\n" );
 
-   if ( ( CheckUserParm( "?" ) ) || ( argc < 2 ) )
+   if ( ( CheckUserParm( "?", argc, argv ) ) || ( argc < 2 ) )
       {
       int index;
 
@@ -110,8 +119,10 @@ void main
          }
 
       printf( "\n" );
-      exit( 0 );
+      return 0;
       }
+
+   __djgpp_nearptr_enable();
 
    // Default is GenMidi
    card = 0;
@@ -123,27 +134,27 @@ void main
       sscanf( ptr, "%d,%x", &card, &address );
       }
 
-   ptr = GetUserText( "MPU" );
+   ptr = GetUserText( "MPU", argc, argv );
    if ( ptr != NULL )
       {
       sscanf( ptr, "%x", &address );
       }
 
-   ptr = GetUserText( "TIMBRE" );
+   ptr = GetUserText( "TIMBRE", argc, argv );
    if ( ptr != NULL )
       {
       sscanf( ptr, "%s", timbrefile );
       LoadTimbres( timbrefile );
       }
 
-   ptr = GetUserText( "POSITION" );
+   ptr = GetUserText( "POSITION", argc, argv );
    if ( ptr != NULL )
       {
       gotopos = 1;
       sscanf( ptr, "%d:%d:%d", &measure, &beat, &tick );
       }
 
-   ptr = GetUserText( "TIME" );
+   ptr = GetUserText( "TIME", argc, argv);
    if ( ptr != NULL )
       {
       int minutes = 0;
@@ -155,7 +166,7 @@ void main
       time = minutes * ( 60 * 1000 ) + seconds * 1000 + milli;
       }
 
-   ptr = GetUserText( "CARD" );
+   ptr = GetUserText( "CARD", argc, argv );
    if ( ptr != NULL )
       {
       sscanf( ptr, "%d", &card );
@@ -170,7 +181,7 @@ void main
    if ( status != MUSIC_Ok )
       {
       printf( "Error - %s\n", MUSIC_ErrorString( status ) );
-      exit( 1 );
+      return 1;
       }
 
    strcpy( filename, argv[ 1 ] );
@@ -274,6 +285,7 @@ void main
    free( SongPtr );
    MUSIC_Shutdown();
    printf( "\n" );
+   return 0;
    }
 
 
@@ -291,7 +303,7 @@ void LoadTimbres
    {
    FILE   *in;
    long   size;
-   char   *TimbrePtr;
+   uint8_t *TimbrePtr;
 
    if ( ( in = fopen( timbrefile, "rb" ) ) == NULL )
       {
@@ -303,14 +315,14 @@ void LoadTimbres
    size = ftell( in );
    fseek( in, 0, SEEK_SET );
 
-   TimbrePtr = ( char * )malloc( size );
+   TimbrePtr = ( uint8_t * )malloc( size );
    if ( TimbrePtr == NULL )
       {
       printf( "Out of memory while reading '%s'.\n", timbrefile );
       exit( 1 );
       }
 
-   if ( fread( TimbrePtr, size, 1, in ) != 1 )
+   if ( fread( TimbrePtr, 1, size, in ) != size )
       {
       printf( "Unexpected end of file while reading '%s'.\n", timbrefile );
       exit(1);
@@ -319,6 +331,7 @@ void LoadTimbres
    fclose( in );
 
    MUSIC_RegisterTimbreBank( TimbrePtr );
+   free(TimbrePtr);
    }
 
 
@@ -377,7 +390,7 @@ char *LoadMidi
 
 char *GetUserText
    (
-   const char *parameter
+   const char *parameter, int _argc, char **_argv
    )
 
    {
@@ -386,8 +399,8 @@ char *GetUserText
    char *text;
    char *ptr;
 
-   extern int   _argc;
-   extern char **_argv;
+   // extern int   _argc;
+   // extern char **_argv;
 
    text = NULL;
    length = strlen( parameter );
@@ -418,7 +431,7 @@ char *GetUserText
 
 int CheckUserParm
    (
-   const char *parameter
+   const char *parameter, int _argc, char **_argv
    )
 
    {
@@ -426,8 +439,8 @@ int CheckUserParm
    int found;
    char *ptr;
 
-   extern int   _argc;
-   extern char **_argv;
+   // extern int   _argc;
+   // extern char **_argv;
 
    found = FALSE;
    i = 1;

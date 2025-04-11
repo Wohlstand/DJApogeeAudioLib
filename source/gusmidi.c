@@ -38,6 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <fcntl.h>
 #include <string.h>
 #include <stdlib.h>
+#include "djconfig.h"
 #include "usrhooks.h"
 #include "interrup.h"
 #include "newgf1.h"
@@ -255,7 +256,7 @@ int GUSMIDI_LoadPatch
       return( GUS_Error );
       }
 
-   status = USRHOOKS_GetMem( &wave_buff, patchi.header.wave_forms *
+   status = USRHOOKS_GetMem( (void**)&wave_buff, patchi.header.wave_forms *
       sizeof( struct wave_struct ) );
    if ( status != USRHOOKS_Ok )
       {

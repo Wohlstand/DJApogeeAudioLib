@@ -1,21 +1,44 @@
-        IDEAL
+;
+; Copyright (C) 1994-1995 Apogee Software, Ltd.
+; Copyright (C) 2023 Frenkel Smeijers
+;
+; This program is free software; you can redistribute it and/or
+; modify it under the terms of the GNU General Public License
+; as published by the Free Software Foundation; either version 2
+; of the License, or (at your option) any later version.
+;
+; This program is distributed in the hope that it will be useful,
+; but WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+; GNU General Public License for more details.
+;
+; You should have received a copy of the GNU General Public License
+; along with this program. If not, see <https://www.gnu.org/licenses/>.
+;
 
-        p386
-        MODEL  flat
+cpu 386
 
-        dataseg
-        CODESEG
+extern   _MV_HarshClipTable
+extern   _MV_MixDestination
+extern   _MV_MixPosition
+extern   _MV_LeftVolume
+extern   _MV_RightVolume
+extern   _MV_SampleSize
+extern   _MV_RightChannelOffset
 
-        MASM
-        ALIGN 4
 
-EXTRN   _MV_HarshClipTable:DWORD
-EXTRN   _MV_MixDestination:DWORD
-EXTRN   _MV_MixPosition:DWORD
-EXTRN   _MV_LeftVolume:DWORD
-EXTRN   _MV_RightVolume:DWORD
-EXTRN   _MV_SampleSize:DWORD
-EXTRN   _MV_RightChannelOffset:DWORD
+extern   _MV_Position
+extern   _MV_Rate
+extern   _MV_Start
+extern   _MV_Length
+
+%ifidn __OUTPUT_FORMAT__, coff
+section .text public class=CODE USE32
+%elifidn __OUTPUT_FORMAT__, obj
+section _TEXT public class=CODE USE32
+%endif
+
+align 4
 
 ;================
 ;
@@ -28,48 +51,50 @@ EXTRN   _MV_RightChannelOffset:DWORD
 ; ebx - start
 ; ecx - number of samples to mix
 
-PROC    MV_Mix8BitMono16_
-PUBLIC  MV_Mix8BitMono16_
+global  _MV_Mix8BitMono16
+_MV_Mix8BitMono16:
 ; Two at once
         pushad
-        mov     ebp, eax
+        mov     ebp, [_MV_Position]
 
-        mov     esi, ebx                        ; Source pointer
+        mov     esi, [_MV_Start]                ; Source pointer
         inc     esi
 
         ; Sample size
-        mov     ebx, _MV_SampleSize
-        mov     eax,OFFSET apatch7+2            ; convice tasm to modify code...
+        mov     ebx, [_MV_SampleSize]
+        mov     eax,apatch7+2            ; convice tasm to modify code...
         mov     [eax],bl
-        mov     eax,OFFSET apatch8+2            ; convice tasm to modify code...
+        mov     eax,apatch8+2            ; convice tasm to modify code...
         mov     [eax],bl
-        mov     eax,OFFSET apatch9+3            ; convice tasm to modify code...
+        mov     eax,apatch9+3            ; convice tasm to modify code...
         mov     [eax],bl
 
         ; Volume table ptr
-        mov     ebx, _MV_LeftVolume             ; Since we're mono, use left volume
-        mov     eax,OFFSET apatch1+4            ; convice tasm to modify code...
+        mov     ebx, [_MV_LeftVolume]             ; Since we're mono, use left volume
+        mov     eax,apatch1+4            ; convice tasm to modify code...
         mov     [eax],ebx
-        mov     eax,OFFSET apatch2+4            ; convice tasm to modify code...
+        mov     eax,apatch2+4            ; convice tasm to modify code...
         mov     [eax],ebx
 
         ; Harsh Clip table ptr
-        mov     ebx, _MV_HarshClipTable
+        mov     ebx, [_MV_HarshClipTable]
         add     ebx, 128
-        mov     eax,OFFSET apatch3+2            ; convice tasm to modify code...
+        mov     eax,apatch3+2            ; convice tasm to modify code...
         mov     [eax],ebx
-        mov     eax,OFFSET apatch4+2            ; convice tasm to modify code...
+        mov     eax,apatch4+2            ; convice tasm to modify code...
         mov     [eax],ebx
 
         ; Rate scale ptr
-        mov     eax,OFFSET apatch5+2            ; convice tasm to modify code...
+        mov     edx, [_MV_Rate]
+        mov     eax,apatch5+2            ; convice tasm to modify code...
         mov     [eax],edx
-        mov     eax,OFFSET apatch6+2            ; convice tasm to modify code...
+        mov     eax,apatch6+2            ; convice tasm to modify code...
         mov     [eax],edx
 
-        mov     edi, _MV_MixDestination         ; Get the position to write to
+        mov     edi, [_MV_MixDestination]         ; Get the position to write to
 
         ; Number of samples to mix
+        mov     ecx, [_MV_Length]
         shr     ecx, 1                          ; double sample count
         cmp     ecx, 0
         je      exit8m
@@ -96,21 +121,21 @@ PUBLIC  MV_Mix8BitMono16_
         add     ebp,edx                         ; advance frac pointer
         shr     ebx,16                          ; finish calculation for second sample
 
-        movsx   eax, byte ptr [esi+2*eax]       ; get first sample
-        movsx   ebx, byte ptr [esi+2*ebx]       ; get second sample
+        movsx   eax, byte [esi+2*eax]       ; get first sample
+        movsx   ebx, byte [esi+2*ebx]       ; get second sample
         add     eax, 80h
         add     ebx, 80h
 
         ALIGN 4
 mix8Mloop:
-        movzx   edx, byte ptr [edi]             ; get current sample from destination
+        movzx   edx, byte [edi]             ; get current sample from destination
 apatch1:
-        movsx   eax, byte ptr [2*eax+12345678h] ; volume translate first sample
+        movsx   eax, byte [2*eax+12345678h] ; volume translate first sample
 apatch2:
-        movsx   ebx, byte ptr [2*ebx+12345678h] ; volume translate second sample
+        movsx   ebx, byte [2*ebx+12345678h] ; volume translate second sample
         add     eax, edx                        ; mix first sample
 apatch9:
-        movzx   edx, byte ptr [edi + 1]         ; get current sample from destination
+        movzx   edx, byte [edi + 1]         ; get current sample from destination
 apatch3:
         mov     eax, [eax + 12345678h]          ; harsh clip new sample
         add     ebx, edx                        ; mix second sample
@@ -128,8 +153,8 @@ apatch7:
         mov     [edi], bl                       ; write new sample to destination
 apatch6:
         add     ebp,12345678h                   ; advance frac pointer
-        movsx   ebx, byte ptr [esi+2*eax]         ; get fourth sample
-        movsx   eax, byte ptr [esi+2*edx]         ; get third sample
+        movsx   ebx, byte [esi+2*eax]         ; get fourth sample
+        movsx   eax, byte [esi+2*edx]         ; get third sample
         add     ebx, 80h
         add     eax, 80h
 apatch8:
@@ -137,12 +162,12 @@ apatch8:
         dec     ecx                             ; decrement count
         jnz     mix8Mloop                       ; loop
 
-        mov     _MV_MixDestination, edi         ; Store the current write position
-        mov     _MV_MixPosition, ebp            ; return position
+        mov     [_MV_MixDestination], edi         ; Store the current write position
+        mov     [_MV_MixPosition], ebp            ; return position
 exit8m:
         popad
         ret
-ENDP    MV_Mix8BitMono16_
+
 
 ;================
 ;
@@ -155,53 +180,55 @@ ENDP    MV_Mix8BitMono16_
 ; ebx - start
 ; ecx - number of samples to mix
 
-PROC    MV_Mix8BitStereo16_
-PUBLIC  MV_Mix8BitStereo16_
+global  _MV_Mix8BitStereo16
+_MV_Mix8BitStereo16:
 
         pushad
-        mov     ebp, eax
+        mov     ebp, [_MV_Position]
 
-        mov     esi, ebx                        ; Source pointer
+        mov     esi, [_MV_Start]         ; Source pointer
         inc     esi
 
         ; Sample size
-        mov     ebx, _MV_SampleSize
-        mov     eax,OFFSET bpatch8+2            ; convice tasm to modify code...
+        mov     ebx, [_MV_SampleSize]
+        mov     eax,bpatch8+2            ; convice tasm to modify code...
         mov     [eax],bl
- ;       mov     eax,OFFSET bpatch9+2            ; convice tasm to modify code...
+ ;       mov     eax,bpatch9+2            ; convice tasm to modify code...
  ;       mov     [eax],bl
 
         ; Right channel offset
-        mov     ebx, _MV_RightChannelOffset
-        mov     eax,OFFSET bpatch6+3            ; convice tasm to modify code...
+        mov     ebx, [_MV_RightChannelOffset]
+        mov     eax,bpatch6+3            ; convice tasm to modify code...
         mov     [eax],ebx
-        mov     eax,OFFSET bpatch7+2            ; convice tasm to modify code...
+        mov     eax,bpatch7+2            ; convice tasm to modify code...
         mov     [eax],ebx
 
         ; Volume table ptr
-        mov     ebx, _MV_LeftVolume
-        mov     eax,OFFSET bpatch1+4            ; convice tasm to modify code...
+        mov     ebx, [_MV_LeftVolume]
+        mov     eax,bpatch1+4            ; convice tasm to modify code...
         mov     [eax],ebx
 
-        mov     ebx, _MV_RightVolume
-        mov     eax,OFFSET bpatch2+4            ; convice tasm to modify code...
+        mov     ebx, [_MV_RightVolume]
+        mov     eax,bpatch2+4            ; convice tasm to modify code...
         mov     [eax],ebx
 
         ; Rate scale ptr
-        mov     eax,OFFSET bpatch3+2            ; convice tasm to modify code...
+        mov     edx, [_MV_Rate]
+        mov     eax,bpatch3+2            ; convice tasm to modify code...
         mov     [eax],edx
 
         ; Harsh Clip table ptr
         mov     ebx, _MV_HarshClipTable
         add     ebx,128
-        mov     eax,OFFSET bpatch4+2            ; convice tasm to modify code...
+        mov     eax,bpatch4+2            ; convice tasm to modify code...
         mov     [eax],ebx
-        mov     eax,OFFSET bpatch5+2            ; convice tasm to modify code...
+        mov     eax,bpatch5+2            ; convice tasm to modify code...
         mov     [eax],ebx
 
         mov     edi, _MV_MixDestination         ; Get the position to write to
 
         ; Number of samples to mix
+        mov     ecx, [_MV_Length]
         cmp     ecx, 0
         je      short exit8S
 
@@ -221,21 +248,21 @@ PUBLIC  MV_Mix8BitStereo16_
         mov     eax,ebp                         ; begin calculating first sample
         shr     eax,16                          ; finish calculation for first sample
 
-        movsx   ebx, byte ptr [esi+2*eax]       ; get first sample
+        movsx   ebx, byte [esi+2*eax]       ; get first sample
         add     ebx, 80h
 
         ALIGN 4
 mix8Sloop:
 bpatch1:
-        movsx   eax, byte ptr [2*ebx+12345678h] ; volume translate left sample
-        movzx   edx, byte ptr [edi]             ; get current sample from destination
+        movsx   eax, byte [2*ebx+12345678h] ; volume translate left sample
+        movzx   edx, byte [edi]             ; get current sample from destination
 bpatch2:
-        movsx   ebx, byte ptr [2*ebx+12345678h] ; volume translate right sample
+        movsx   ebx, byte [2*ebx+12345678h] ; volume translate right sample
         add     eax, edx                        ; mix left sample
 bpatch3:
         add     ebp,12345678h                   ; advance frac pointer
 bpatch6:
-        movzx   edx, byte ptr [edi+12345678h]   ; get current sample from destination
+        movzx   edx, byte [edi+12345678h]   ; get current sample from destination
 bpatch4:
         mov     eax, [eax + 12345678h]          ; harsh clip left sample
         add     ebx, edx                        ; mix right sample
@@ -248,18 +275,18 @@ bpatch7:
         shr     edx, 16                         ; finish calculation for second sample
 bpatch8:
         add     edi, 1                          ; move destination to second sample
-        movsx   ebx, byte ptr [esi+2*edx]       ; get second sample
+        movsx   ebx, byte [esi+2*edx]       ; get second sample
         add     ebx, 80h
         dec     ecx                             ; decrement count
         jnz     mix8Sloop                       ; loop
 
-        mov     _MV_MixDestination, edi         ; Store the current write position
-        mov     _MV_MixPosition, ebp            ; return position
+        mov     [_MV_MixDestination], edi         ; Store the current write position
+        mov     [_MV_MixPosition], ebp            ; return position
 
-EXIT8S:
+exit8S:
         popad
         ret
-ENDP    MV_Mix8BitStereo16_
+
 
 ;================
 ;
@@ -272,36 +299,38 @@ ENDP    MV_Mix8BitStereo16_
 ; ebx - start
 ; ecx - number of samples to mix
 
-PROC    MV_Mix16BitMono16_
-PUBLIC  MV_Mix16BitMono16_
+global  _MV_Mix16BitMono16
+_MV_Mix16BitMono16:
 
         pushad
-        mov     ebp, eax
+        mov     ebp, [_MV_Position]
 
-        mov     esi, ebx                        ; Source pointer
+        mov     esi, [_MV_Start]                ; Source pointer
 
         ; Sample size
-        mov     ebx, _MV_SampleSize
-        mov     eax,OFFSET cpatch4+2            ; convice tasm to modify code...
+        mov     ebx, [_MV_SampleSize]
+        mov     eax,cpatch4+2            ; convice tasm to modify code...
         mov     [eax],bl
-        mov     eax,OFFSET cpatch5+3            ; convice tasm to modify code...
+        mov     eax,cpatch5+3            ; convice tasm to modify code...
         mov     [eax],bl
 
         ; Volume table ptr
-        mov     ebx, _MV_LeftVolume
-        mov     eax,OFFSET cpatch2+4            ; convice tasm to modify code...
+        mov     ebx, [_MV_LeftVolume]
+        mov     eax,cpatch2+4            ; convice tasm to modify code...
         mov     [eax],ebx
-        mov     eax,OFFSET cpatch1+4            ; convice tasm to modify code...
+        mov     eax,cpatch1+4            ; convice tasm to modify code...
         inc     ebx
         mov     [eax],ebx
 
         ; Rate scale ptr
-        mov     eax,OFFSET cpatch3+2            ; convice tasm to modify code...
+        mov     edx, [_MV_Rate]
+        mov     eax,cpatch3+2            ; convice tasm to modify code...
         mov     [eax],edx
 
-        mov     edi, _MV_MixDestination         ; Get the position to write to
+        mov     edi, [_MV_MixDestination]         ; Get the position to write to
 
         ; Number of samples to mix
+        mov     ecx, [_MV_Length]
         cmp     ecx, 0
         je exit16M
 
@@ -320,23 +349,23 @@ PUBLIC  MV_Mix16BitMono16_
         mov     ebx,ebp                         ; begin calculating first sample
         add     ebp,edx                         ; advance frac pointer
         shr     ebx,16                          ; finish calculation for first sample
-        movzx   eax, word ptr [esi+2*ebx]       ; get low byte of sample
+        movzx   eax, word [esi+2*ebx]       ; get low byte of sample
         xor     eax, 8000h
         movzx   ebx, ah
         sub     ah, ah
 
-        movsx   edx, word ptr [edi]             ; get current sample from destination
+        movsx   edx, word [edi]             ; get current sample from destination
 
         ALIGN 4
 mix16Mloop:
 cpatch1:
-        movsx   eax, byte ptr [2*eax+12345678h] ; volume translate low byte of sample
+        movsx   eax, byte [2*eax+12345678h] ; volume translate low byte of sample
 cpatch2:
-        movsx   ebx, word ptr [2*ebx+12345678h] ; volume translate high byte of sample
+        movsx   ebx, word [2*ebx+12345678h] ; volume translate high byte of sample
         lea     eax, [ eax + ebx + 80h ]        ; mix high byte of sample
         add     eax, edx                        ; mix low byte of sample
 cpatch5:
-        movsx   edx, word ptr [edi + 2]         ; get current sample from destination
+        movsx   edx, word [edi + 2]         ; get current sample from destination
 
         cmp     eax, -32768                     ; Harsh clip sample
         jge     short m16skip1
@@ -354,7 +383,7 @@ m16skip2:
 cpatch3:
         add     ebp, 12345678h                  ; advance frac pointer
 
-        movzx   eax, word ptr [esi+2*ebx]       ; get second sample
+        movzx   eax, word [esi+2*ebx]       ; get second sample
 cpatch4:
         add     edi, 2                          ; move destination to second sample
         xor     eax, 8000h
@@ -364,12 +393,12 @@ cpatch4:
         dec     ecx                             ; decrement count
         jnz     mix16Mloop                      ; loop
 
-        mov     _MV_MixDestination, edi         ; Store the current write position
-        mov     _MV_MixPosition, ebp            ; return position
-EXIT16M:
+        mov     [_MV_MixDestination], edi         ; Store the current write position
+        mov     [_MV_MixPosition], ebp            ; return position
+exit16M:
         popad
         ret
-ENDP    MV_Mix16BitMono16_
+
 
 ;================
 ;
@@ -382,52 +411,55 @@ ENDP    MV_Mix16BitMono16_
 ; ebx - start
 ; ecx - number of samples to mix
 
-PROC    MV_Mix16BitStereo16_
-PUBLIC  MV_Mix16BitStereo16_
+global  _MV_Mix16BitStereo16
+_MV_Mix16BitStereo16:
 
         pushad
-        mov     ebp, eax
+        mov     ebp, [_MV_Position]
 
-        mov     esi, ebx                        ; Source pointer
+        mov     esi, [_MV_Start]                ; Source pointer
 
         ; Sample size
-        mov     ebx, _MV_SampleSize
-        mov     eax,OFFSET dpatch9+2            ; convice tasm to modify code...
+        mov     ebx, [_MV_SampleSize]
+        mov     eax,dpatch9+2            ; convice tasm to modify code...
         mov     [eax],bl
 
         ; Right channel offset
-        mov     ebx, _MV_RightChannelOffset
-        mov     eax,OFFSET dpatch7+3            ; convice tasm to modify code...
+        mov     ebx, [_MV_RightChannelOffset]
+        mov     eax,dpatch7+3            ; convice tasm to modify code...
         mov     [eax],ebx
-        mov     eax,OFFSET dpatch8+3            ; convice tasm to modify code...
+        mov     eax,dpatch8+3            ; convice tasm to modify code...
         mov     [eax],ebx
 
         ; Volume table ptr
-        mov     ebx, _MV_LeftVolume
-        mov     eax,OFFSET dpatch1+4            ; convice tasm to modify code...
+        mov     ebx, [_MV_LeftVolume]
+        mov     eax,dpatch1+4            ; convice tasm to modify code...
         mov     [eax],ebx
-        mov     eax,OFFSET dpatch2+4            ; convice tasm to modify code...
+        mov     eax,dpatch2+4            ; convice tasm to modify code...
         inc     ebx
         mov     [eax],ebx
 
-        mov     ebx, _MV_RightVolume
-        mov     eax,OFFSET dpatch3+4            ; convice tasm to modify code...
+        mov     ebx, [_MV_RightVolume]
+        mov     eax,dpatch3+4            ; convice tasm to modify code...
         mov     [eax],ebx
-        mov     eax,OFFSET dpatch4+4            ; convice tasm to modify code...
+        mov     eax,dpatch4+4            ; convice tasm to modify code...
         inc     ebx
         mov     [eax],ebx
 
         ; Rate scale ptr
-        mov     eax,OFFSET dpatch5+2            ; convice tasm to modify code...
+        mov     edx, [_MV_Rate]
+        mov     eax,dpatch5+2            ; convice tasm to modify code...
         mov     [eax],edx
 
         ; Source ptr
-        mov     eax,OFFSET dpatch6+4            ; convice tasm to modify code...
+        mov     esi, [_MV_Start]
+        mov     eax,dpatch6+4            ; convice tasm to modify code...
         mov     [eax],esi
 
-        mov     edi, _MV_MixDestination         ; Get the position to write to
+        mov     edi, [_MV_MixDestination]         ; Get the position to write to
 
         ; Number of samples to mix
+        mov     ecx, [_MV_Length]
         cmp     ecx, 0
         je      exit16S
 
@@ -445,7 +477,7 @@ PUBLIC  MV_Mix16BitStereo16_
         mov     ebx,ebp                         ; begin calculating first sample
         shr     ebx,16                          ; finish calculation for first sample
 
-        movzx   edx, word ptr [esi+2*ebx]       ; get first sample
+        movzx   edx, word [esi+2*ebx]       ; get first sample
         xor     edx, 8000h                      ; Change from signed to unsigned
         movzx   esi, dh                         ; put high byte in esi
         sub     dh, dh                          ; lo byte in edx
@@ -454,20 +486,20 @@ PUBLIC  MV_Mix16BitStereo16_
 mix16Sloop:
         ; Left channel
 dpatch1:
-        movsx   eax, word ptr [2*esi+12345678h] ; volume translate high byte of sample
+        movsx   eax, word [2*esi+12345678h] ; volume translate high byte of sample
 dpatch2:
-        movsx   ebx, byte ptr [2*edx+12345678h] ; volume translate low byte of sample
+        movsx   ebx, byte [2*edx+12345678h] ; volume translate low byte of sample
         lea     eax, [ eax + ebx + 80h ]        ; mix high byte of sample
 
         ; Right channel
 dpatch3:
-        movsx   esi, word ptr [2*esi+12345678h] ; volume translate high byte of sample
+        movsx   esi, word [2*esi+12345678h] ; volume translate high byte of sample
 dpatch4:
-        movsx   ebx, byte ptr [2*edx+12345678h] ; volume translate low byte of sample
+        movsx   ebx, byte [2*edx+12345678h] ; volume translate low byte of sample
         lea     ebx, [ esi + ebx + 80h ]        ; mix high byte of sample
 
 dpatch7:
-        movsx   edx, word ptr [edi+12345678h]   ; get current sample from destination
+        movsx   edx, word [edi+12345678h]   ; get current sample from destination
 dpatch5:
         add     ebp,12345678h                   ; advance frac pointer
 
@@ -482,7 +514,7 @@ s16skip1:
         jle     short s16skip2
         mov     eax, 32767
 s16skip2:
-        movsx   edx, word ptr [edi+2]           ; get current sample from destination
+        movsx   edx, word [edi+2]           ; get current sample from destination
         mov     [edi], ax                       ; write left sample to destination
         add     ebx, edx                        ; mix right sample
 
@@ -504,7 +536,7 @@ dpatch9:
         add     edi, 4                          ; move destination to second sample
 
 dpatch6:
-        movzx   edx, word ptr [2*edx+12345678h] ; get second sample
+        movzx   edx, word [2*edx+12345678h] ; get second sample
         xor     edx, 8000h                      ; Change from signed to unsigned
         movzx   esi, dh                         ; put high byte in esi
         sub     dh, dh                          ; lo byte in edx
@@ -512,13 +544,8 @@ dpatch6:
         dec     ecx                             ; decrement count
         jnz     mix16Sloop                      ; loop
 
-        mov     _MV_MixDestination, edi         ; Store the current write position
-        mov     _MV_MixPosition, ebp            ; return position
+        mov     [_MV_MixDestination], edi         ; Store the current write position
+        mov     [_MV_MixPosition], ebp            ; return position
 exit16S:
         popad
         ret
-ENDP    MV_Mix16BitStereo16_
-
-        ENDS
-
-        END

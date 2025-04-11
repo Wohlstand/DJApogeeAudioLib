@@ -70,31 +70,31 @@ int  DPMI_UnlockMemory( void *address, unsigned length );
 int  DPMI_UnlockMemoryRegion( void *start, void *end );
 
 #define DPMI_Lock( variable ) \
-   ( DPMI_LockMemory( &( variable ), sizeof( variable ) ) )
+   ( DPMI_LockMemory( (void*)&( variable ), sizeof( variable ) ) )
 
 #define DPMI_Unlock( variable ) \
-   ( DPMI_UnlockMemory( &( variable ), sizeof( variable ) ) )
+   ( DPMI_UnlockMemory( (void*)&( variable ), sizeof( variable ) ) )
 
-#pragma aux DPMI_GetDOSMemory = \
-   "mov    eax, 0100h",         \
-   "add    ebx, 15",            \
-   "shr    ebx, 4",             \
-   "int    31h",                \
-   "jc     DPMI_Exit",          \
-   "movzx  eax, ax",            \
-   "shl    eax, 4",             \
-   "mov    [ esi ], eax",       \
-   "mov    [ edi ], edx",       \
-   "sub    eax, eax",           \
-   "DPMI_Exit:",                \
-   parm [ esi ] [ edi ] [ ebx ] modify exact [ eax ebx edx ];
+// #pragma aux DPMI_GetDOSMemory = \
+//    "mov    eax, 0100h",         \
+//    "add    ebx, 15",            \
+//    "shr    ebx, 4",             \
+//    "int    31h",                \
+//    "jc     DPMI_Exit",          \
+//    "movzx  eax, ax",            \
+//    "shl    eax, 4",             \
+//    "mov    [ esi ], eax",       \
+//    "mov    [ edi ], edx",       \
+//    "sub    eax, eax",           \
+//    "DPMI_Exit:",                \
+//    parm [ esi ] [ edi ] [ ebx ] modify exact [ eax ebx edx ];
 
-#pragma aux DPMI_FreeDOSMemory = \
-   "mov    eax, 0101h",          \
-   "int    31h",                 \
-   "jc     DPMI_Exit",           \
-   "sub    eax, eax",            \
-   "DPMI_Exit:",                 \
-   parm [ edx ] modify exact [ eax ];
+// #pragma aux DPMI_FreeDOSMemory = \
+//    "mov    eax, 0101h",          \
+//    "int    31h",                 \
+//    "jc     DPMI_Exit",           \
+//    "sub    eax, eax",            \
+//    "DPMI_Exit:",                 \
+//    parm [ edx ] modify exact [ eax ];
 
 #endif

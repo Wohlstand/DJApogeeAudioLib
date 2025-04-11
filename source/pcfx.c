@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <dos.h>
 #include <stdlib.h>
 #include <conio.h>
+#include "djconfig.h"
 #include "a_dpmi.h"
 #include "task_man.h"
 #include "interrup.h"
@@ -271,7 +272,7 @@ int PCFX_Play
 
    PCFX_Priority = priority;
 
-   PCFX_Sound = &sound->data;
+   PCFX_Sound = (char*)&sound->data;
    PCFX_CallBackVal = callbackval;
 
    RestoreInterrupts( flags );

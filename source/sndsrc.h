@@ -31,6 +31,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef __SNDSRC_H
 #define __SNDSRC_H
 
+#include <stdint.h>
+
 enum SS_ERRORS
    {
    SS_Warning = -2,
@@ -57,7 +59,7 @@ enum SS_ERRORS
 char *SS_ErrorString( int ErrorNumber );
 void  SS_StopPlayback( void );
 int   SS_GetCurrentPos( void );
-int   SS_BeginBufferedPlayback( char *BufferStart, int BufferSize, int NumDivisions, void ( *CallBackFunc )( void ) );
+int   SS_BeginBufferedPlayback(uint8_t *BufferStart, int BufferSize, int NumDivisions, void ( *CallBackFunc )( void ) );
 int   SS_GetPlaybackRate( void );
 int   SS_SetMixMode( int mode );
 int   SS_SetPort( int port );

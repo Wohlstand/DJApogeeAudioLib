@@ -28,14 +28,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
    (c) Copyright 1994 James R. Dose.  All Rights Reserved.
 **********************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
+// #include <stdlib.h>
 #include "sndcards.h"
 #include "multivoc.h"
 #include "blaster.h"
-#include "pas16.h"
-#include "sndscape.h"
-#include "guswave.h"
+// #include "pas16.h"
+// #include "sndscape.h"
+// #include "guswave.h"
 #include "sndsrc.h"
 #include "ll_man.h"
 #include "user.h"
@@ -105,15 +104,18 @@ char *FX_ErrorString
 
             case ProAudioSpectrum :
             case SoundMan16 :
-               ErrorString = PAS_ErrorString( PAS_Error );
+               // ErrorString = PAS_ErrorString( PAS_Error );
+               ErrorString = "ProAudio Spectrum support is not built";
                break;
 
             case SoundScape :
-               ErrorString = SOUNDSCAPE_ErrorString( SOUNDSCAPE_Error );
+               // ErrorString = SOUNDSCAPE_ErrorString( SOUNDSCAPE_Error );
+               ErrorString = "SoundScape support is not built";
                break;
 
             case UltraSound :
-               ErrorString = GUSWAVE_ErrorString( GUSWAVE_Error );
+               // ErrorString = GUSWAVE_ErrorString( GUSWAVE_Error );
+               ErrorString = "Gravis Ultrasound support is not built";
                break;
 
             case SoundSource :
@@ -189,16 +191,18 @@ int FX_SetupCard
 
       case ProAudioSpectrum :
       case SoundMan16 :
-         DeviceStatus = PAS_Init();
-         if ( DeviceStatus != PAS_Ok )
-            {
-            FX_SetErrorCode( FX_SoundCardError );
-            status = FX_Error;
-            break;
-            }
+         FX_SetErrorCode( FX_SoundCardError );
+         status = FX_Error;
+         // DeviceStatus = PAS_Init();
+         // if ( DeviceStatus != PAS_Ok )
+         //    {
+         //    FX_SetErrorCode( FX_SoundCardError );
+         //    status = FX_Error;
+         //    break;
+         //    }
 
-         device->MaxVoices = 32;
-         PAS_GetCardInfo( &device->MaxSampleBits, &device->MaxChannels );
+         // device->MaxVoices = 32;
+         // PAS_GetCardInfo( &device->MaxSampleBits, &device->MaxChannels );
          break;
 
       case GenMidi :
@@ -210,27 +214,31 @@ int FX_SetupCard
          break;
 
       case SoundScape :
-         device->MaxVoices = 32;
-         DeviceStatus = SOUNDSCAPE_GetCardInfo( &device->MaxSampleBits,
-            &device->MaxChannels );
-         if ( DeviceStatus != SOUNDSCAPE_Ok )
-            {
-            FX_SetErrorCode( FX_SoundCardError );
-            status = FX_Error;
-            }
+         FX_SetErrorCode( FX_SoundCardError );
+         status = FX_Error;
+         // device->MaxVoices = 32;
+         // DeviceStatus = SOUNDSCAPE_GetCardInfo( &device->MaxSampleBits,
+         //    &device->MaxChannels );
+         // if ( DeviceStatus != SOUNDSCAPE_Ok )
+         //    {
+         //    FX_SetErrorCode( FX_SoundCardError );
+         //    status = FX_Error;
+         //    }
          break;
 
       case UltraSound :
-         if ( GUSWAVE_Init( 8 ) != GUSWAVE_Ok )
-            {
-            FX_SetErrorCode( FX_SoundCardError );
-            status = FX_Error;
-            break;
-            }
+         FX_SetErrorCode( FX_SoundCardError );
+         status = FX_Error;
+         // if ( GUSWAVE_Init( 8 ) != GUSWAVE_Ok )
+         //    {
+         //    FX_SetErrorCode( FX_SoundCardError );
+         //    status = FX_Error;
+         //    break;
+         //    }
 
-         device->MaxVoices     = 8;
-         device->MaxSampleBits = 0;
-         device->MaxChannels   = 0;
+         // device->MaxVoices     = 8;
+         // device->MaxSampleBits = 0;
+         // device->MaxChannels   = 0;
          break;
 
       case SoundSource :
@@ -535,11 +543,12 @@ void FX_SetVolume
 
       case ProAudioSpectrum :
       case SoundMan16 :
-         status = PAS_SetPCMVolume( volume );
-         if ( status != PAS_Ok )
-            {
-            MV_SetVolume( volume );
-            }
+         MV_SetVolume( volume );
+         // status = PAS_SetPCMVolume( volume );
+         // if ( status != PAS_Ok )
+         //    {
+         //    MV_SetVolume( volume );
+         //    }
          break;
 
       case GenMidi :
@@ -552,7 +561,8 @@ void FX_SetVolume
          break;
 
       case UltraSound :
-         GUSWAVE_SetVolume( volume );
+         // GUSWAVE_SetVolume( volume );
+         MV_SetVolume( volume );
          break;
 
       case SoundSource :
@@ -593,11 +603,12 @@ int FX_GetVolume
 
       case ProAudioSpectrum :
       case SoundMan16 :
-         volume = PAS_GetPCMVolume();
-         if ( volume == PAS_Error )
-            {
-            volume = MV_GetVolume();
-            }
+         volume = MV_GetVolume();
+         // volume = PAS_GetPCMVolume();
+         // if ( volume == PAS_Error )
+         //    {
+         //    volume = MV_GetVolume();
+         //    }
          break;
 
       case GenMidi :
@@ -611,7 +622,8 @@ int FX_GetVolume
          break;
 
       case UltraSound :
-         volume = GUSWAVE_GetVolume();
+         // volume = GUSWAVE_GetVolume();
+         volume = MV_GetVolume();
          break;
 
       case SoundSource :
@@ -866,15 +878,15 @@ int FX_SetFrequency
 ---------------------------------------------------------------------*/
 
 int FX_PlayVOC
-   (
-   char *ptr,
-   int pitchoffset,
-   int vol,
-   int left,
-   int right,
-   int priority,
-   unsigned long callbackval
-   )
+(
+uint8_t *ptr,
+int pitchoffset,
+int vol,
+int left,
+int right,
+int priority,
+unsigned long callbackval
+)
 
    {
    int handle;
@@ -898,17 +910,17 @@ int FX_PlayVOC
 ---------------------------------------------------------------------*/
 
 int FX_PlayLoopedVOC
-   (
-   char *ptr,
-   long loopstart,
-   long loopend,
-   int pitchoffset,
-   int vol,
-   int left,
-   int right,
-   int priority,
-   unsigned long callbackval
-   )
+(
+uint8_t *ptr,
+long loopstart,
+long loopend,
+int pitchoffset,
+int vol,
+int left,
+int right,
+int priority,
+unsigned long callbackval
+)
 
    {
    int handle;
@@ -932,15 +944,15 @@ int FX_PlayLoopedVOC
 ---------------------------------------------------------------------*/
 
 int FX_PlayWAV
-   (
-   char *ptr,
-   int pitchoffset,
-   int vol,
-   int left,
-   int right,
-   int priority,
-   unsigned long callbackval
-   )
+(
+uint8_t *ptr,
+int pitchoffset,
+int vol,
+int left,
+int right,
+int priority,
+unsigned long callbackval
+)
 
    {
    int handle;
@@ -964,17 +976,17 @@ int FX_PlayWAV
 ---------------------------------------------------------------------*/
 
 int FX_PlayLoopedWAV
-   (
-   char *ptr,
-   long loopstart,
-   long loopend,
-   int pitchoffset,
-   int vol,
-   int left,
-   int right,
-   int priority,
-   unsigned long callbackval
-   )
+(
+uint8_t *ptr,
+long loopstart,
+long loopend,
+int pitchoffset,
+int vol,
+int left,
+int right,
+int priority,
+unsigned long callbackval
+)
 
    {
    int handle;
@@ -999,14 +1011,14 @@ int FX_PlayLoopedWAV
 ---------------------------------------------------------------------*/
 
 int FX_PlayVOC3D
-   (
-   char *ptr,
-   int pitchoffset,
-   int angle,
-   int distance,
-   int priority,
-   unsigned long callbackval
-   )
+(
+uint8_t *ptr,
+int pitchoffset,
+int angle,
+int distance,
+int priority,
+unsigned long callbackval
+)
 
    {
    int handle;
@@ -1031,14 +1043,14 @@ int FX_PlayVOC3D
 ---------------------------------------------------------------------*/
 
 int FX_PlayWAV3D
-   (
-   char *ptr,
-   int pitchoffset,
-   int angle,
-   int distance,
-   int priority,
-   unsigned long callbackval
-   )
+(
+uint8_t *ptr,
+int pitchoffset,
+int angle,
+int distance,
+int priority,
+unsigned long callbackval
+)
 
    {
    int handle;
@@ -1063,7 +1075,7 @@ int FX_PlayWAV3D
 
 int FX_PlayRaw
    (
-   char *ptr,
+   uint8_t *ptr,
    unsigned long length,
    unsigned rate,
    int pitchoffset,
@@ -1096,19 +1108,19 @@ int FX_PlayRaw
 ---------------------------------------------------------------------*/
 
 int FX_PlayLoopedRaw
-   (
-   char *ptr,
-   unsigned long length,
-   char *loopstart,
-   char *loopend,
-   unsigned rate,
-   int pitchoffset,
-   int vol,
-   int left,
-   int right,
-   int priority,
-   unsigned long callbackval
-   )
+(
+uint8_t *ptr,
+unsigned long length,
+uint8_t *loopstart,
+uint8_t *loopend,
+unsigned rate,
+int pitchoffset,
+int vol,
+int left,
+int right,
+int priority,
+unsigned long callbackval
+)
 
    {
    int handle;
@@ -1243,7 +1255,7 @@ int FX_StopAllSounds
 
 int FX_StartDemandFeedPlayback
    (
-   void ( *function )( char **ptr, unsigned long *length ),
+   void ( *function )( uint8_t **ptr, unsigned long *length ),
    int rate,
    int pitchoffset,
    int vol,
@@ -1277,7 +1289,7 @@ int FX_StartDemandFeedPlayback
 int FX_StartRecording
    (
    int MixRate,
-   void ( *function )( char *ptr, int length )
+   void ( *function )( uint8_t *ptr, int length )
    )
 
    {

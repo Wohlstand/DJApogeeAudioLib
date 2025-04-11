@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdio.h>
 #include <io.h>
 #include <string.h>
+#include "djconfig.h"
 #include "debugio.h"
 #include "interrup.h"
 #include "ll_man.h"
@@ -323,7 +324,7 @@ static int LOADDS GUSWAVE_CallBack
                {
                if ( Voice->bits == 8 )
                   {
-                  *buf = GUS_Silence8;
+                  *buf = (unsigned char*)GUS_Silence8;
                   }
                else
                   {
@@ -497,7 +498,7 @@ static int LOADDS GUSWAVE_DebugCallBack
    Locates the voice with the specified handle.
 ---------------------------------------------------------------------*/
 
-static VoiceNode *GUSWAVE_GetVoice
+/*static*/ VoiceNode *GUSWAVE_GetVoice
    (
    int handle
    )
@@ -706,7 +707,7 @@ int GUSWAVE_KillAllVoices
    for( i = 0; i < GUSWAVE_MaxVoices; i++ )
       {
       GUSWAVE_Voices[ i ].Active = FALSE;
-      if ( GUSWAVE_Voices[ i ].mem != NULL )
+      if ( GUSWAVE_Voices[ i ].mem != 0 )
          {
          LL_AddToTail( VoiceNode, &VoicePool, &GUSWAVE_Voices[ i ] );
          }
@@ -750,7 +751,7 @@ int GUSWAVE_SetPitch
       {
       voice->PitchScale  = PITCH_GetScale( pitchoffset );
       voice->RateScale   = ( voice->SamplingRate * voice->PitchScale ) >> 16;
-      gf1_dig_set_freq( voice->GF1voice, voice->RateScale );
+      // gf1_dig_set_freq( voice->GF1voice, voice->RateScale );
       }
 
    RestoreInterrupts( flags );
@@ -866,7 +867,7 @@ int GUSWAVE_GetVolume
    Retrieve an inactive or lower priority voice for output.
 ---------------------------------------------------------------------*/
 
-static VoiceNode *GUSWAVE_AllocVoice
+/*static*/ VoiceNode *GUSWAVE_AllocVoice
    (
    int priority
    )
@@ -1096,7 +1097,7 @@ playbackstatus GUSWAVE_GetNextVOCBlock
             // Repeat begin
             voice->LoopCount = *( unsigned short * )ptr;
             ptr += blocklength;
-            voice->LoopStart = ptr;
+            voice->LoopStart = (char*)ptr;
             break;
 
          case 7 :
@@ -1110,7 +1111,7 @@ playbackstatus GUSWAVE_GetNextVOCBlock
                {
                if ( ( voice->LoopCount > 0 ) && ( voice->LoopStart != NULL ) )
                   {
-                  ptr = voice->LoopStart;
+                  ptr = (unsigned char*)voice->LoopStart;
                   if ( voice->LoopCount < 0xffff )
                      {
                      voice->LoopCount--;
@@ -1249,7 +1250,7 @@ playbackstatus GUSWAVE_GetNextDemandFeedBlock
       return( SoundDone );
       }
 
-   ( voice->DemandFeed )( &voice->sound, &voice->BlockLength );
+   ( voice->DemandFeed )( (char**)&voice->sound, &voice->BlockLength );
 //   voice->sound = GUS_Silence16;
 //   voice->BlockLength = 256;
 
@@ -1672,7 +1673,7 @@ static int GUSWAVE_InitVoices
       GUSWAVE_Voices[ i ].num      = -1;
       GUSWAVE_Voices[ i ].Active   = FALSE;
       GUSWAVE_Voices[ i ].GF1voice = -1;
-      GUSWAVE_Voices[ i ].mem      = NULL;
+      GUSWAVE_Voices[ i ].mem      = 0;
       }
 
    for( i = 0; i < VOICES; i++ )
@@ -1682,7 +1683,7 @@ static int GUSWAVE_InitVoices
       GUSWAVE_Voices[ i ].GF1voice = 0;
 
       GUSWAVE_Voices[ i ].mem = gf1_malloc( GF1BSIZE );
-      if ( GUSWAVE_Voices[ i ].mem == NULL )
+      if ( GUSWAVE_Voices[ i ].mem == 0 )
          {
          GUSWAVE_MaxVoices = i;
          if ( i < 1 )

@@ -31,8 +31,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <dos.h>
 #include <conio.h>
-#include <stdlib.h>
+#include <stdint.h>
+#include <sys/nearptr.h>
 #include "dma.h"
+
+#define LOBYTE(w)   (((uint8_t *)&w)[0])
+#define HIBYTE(w)   (((uint8_t *)&w)[1])
 
 #define DMA_MaxChannel 7
 
@@ -157,20 +161,20 @@ int DMA_VerifyChannel
 int DMA_SetupTransfer
    (
    int  channel,
-   char *address,
+   uint8_t *address,
    int  length,
    int  mode
    )
 
    {
-   DMA_PORT *Port;
-   int      addr;
-   int      ChannelSelect;
-   int      Page;
-   int      HiByte;
-   int      LoByte;
-   int      TransferLength;
-   int      status;
+   const DMA_PORT *Port;
+   int32_t  addr;
+   int32_t  ChannelSelect;
+   int32_t  Page;
+   int32_t  HiByte;
+   int32_t  LoByte;
+   int32_t  TransferLength;
+   int32_t  status;
 
    status = DMA_VerifyChannel( channel );
 
@@ -179,7 +183,7 @@ int DMA_SetupTransfer
       Port = &DMA_PortInfo[ channel ];
       ChannelSelect = channel & 0x3;
 
-      addr = ( int )address;
+      addr = ( int32_t )address - __djgpp_conventional_base;
 
       if ( Port->Width == WORD )
          {
@@ -239,8 +243,8 @@ int DMA_SetupTransfer
       outp( Port->Page, Page );
 
       // Send length
-      outp( Port->Length, TransferLength );
-      outp( Port->Length, TransferLength >> 8 );
+      outp( Port->Length, LOBYTE(TransferLength) );
+      outp( Port->Length, HIBYTE(TransferLength) );
 
       // enable DMA channel
       outp( Port->Mask, ChannelSelect );
@@ -262,7 +266,7 @@ int DMA_EndTransfer
    )
 
    {
-   DMA_PORT *Port;
+   const DMA_PORT *Port;
    int       ChannelSelect;
    int       status;
 
@@ -289,17 +293,16 @@ int DMA_EndTransfer
    Returns the position of the specified DMA transfer.
 ---------------------------------------------------------------------*/
 
-char *DMA_GetCurrentPos
+uint8_t *DMA_GetCurrentPos
    (
-   int channel
+   int32_t channel
    )
 
    {
-   DMA_PORT      *Port;
-   unsigned long addr;
+   const DMA_PORT *Port;
+   uint32_t      addr = 0;
    int           status;
 
-   addr   = NULL;
    status = DMA_VerifyChannel( channel );
 
    if ( status == DMA_Ok )
@@ -325,8 +328,10 @@ char *DMA_GetCurrentPos
          addr |= inp( Port->Page ) << 16;
          }
       }
+   else
+      return 0;
 
-   return( ( char * )addr );
+   return( ( uint8_t * )(addr + __djgpp_conventional_base) );
    }
 
 
@@ -342,7 +347,7 @@ int DMA_GetTransferCount
    )
 
    {
-   DMA_PORT      *Port;
+   const DMA_PORT      *Port;
    int           count;
    int           status;
 

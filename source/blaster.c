@@ -41,7 +41,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "blaster.h"
 #include "_blaster.h"
 
-#define USESTACK
+// #define USESTACK
 
 const int BLASTER_Interrupts[ BLASTER_MaxIrq + 1 ]  =
    {
@@ -70,7 +70,11 @@ const CARD_CAPABILITY BLASTER_CardConfig[ BLASTER_MaxCardType + 1 ] =
 
 CARD_CAPABILITY BLASTER_Card;
 
+#if defined __DJGPP__ || defined __CCDL__
+static _go32_dpmi_seginfo BLASTER_OldInt, BLASTER_NewInt;
+#elif defined __WATCOMC__
 static void    ( __interrupt __far *BLASTER_OldInt )( void );
+#endif
 
 BLASTER_CONFIG BLASTER_Config =
    {
@@ -79,12 +83,12 @@ BLASTER_CONFIG BLASTER_Config =
 
 static int BLASTER_Installed = FALSE;
 
-int BLASTER_Version;
+int BLASTER_Version = 0;
 
-static char   *BLASTER_DMABuffer;
-static char   *BLASTER_DMABufferEnd;
-static char   *BLASTER_CurrentDMABuffer;
-static int     BLASTER_TotalDMABufferSize;
+static uint8_t*BLASTER_DMABuffer = NULL;
+static uint8_t*BLASTER_DMABufferEnd = NULL;
+static uint8_t*BLASTER_CurrentDMABuffer = NULL;
+static int     BLASTER_TotalDMABufferSize = 0;
 
 static int      BLASTER_TransferLength   = 0;
 static int      BLASTER_MixMode          = BLASTER_DefaultMixMode;
@@ -93,13 +97,13 @@ static unsigned BLASTER_SampleRate       = BLASTER_DefaultSampleRate;
 
 static unsigned BLASTER_HaltTransferCommand = DSP_Halt8bitTransfer;
 
-volatile int   BLASTER_SoundPlaying;
-volatile int   BLASTER_SoundRecording;
+volatile int   BLASTER_SoundPlaying = 0;
+volatile int   BLASTER_SoundRecording = 0;
 
-void ( *BLASTER_CallBack )( void );
+void ( *BLASTER_CallBack )( void ) = NULL;
 
-static int  BLASTER_IntController1Mask;
-static int  BLASTER_IntController2Mask;
+static int32_t BLASTER_IntController1Mask;
+static int32_t BLASTER_IntController2Mask;
 
 static int BLASTER_MixerAddress = UNDEFINED;
 static int BLASTER_MixerType    = 0;
@@ -113,39 +117,39 @@ static int BLASTER_WaveBlasterState = 0x0F;
 // adequate stack size
 #define kStackSize 2048
 
-static unsigned short StackSelector = NULL;
-static unsigned long  StackPointer;
+// static unsigned short StackSelector = 0;
+// static unsigned long  StackPointer;
 
-static unsigned short oldStackSelector;
-static unsigned long  oldStackPointer;
+// static unsigned short oldStackSelector;
+// static unsigned long  oldStackPointer;
 
 // This is defined because we can't create local variables in a
 // function that switches stacks.
-static int GlobalStatus;
+static int GlobalStatus = 0;
 
 // These declarations are necessary to use the inline assembly pragmas.
 
-extern void GetStack(unsigned short *selptr,unsigned long *stackptr);
-extern void SetStack(unsigned short selector,unsigned long stackptr);
+// extern void GetStack(unsigned short *selptr,unsigned long *stackptr);
+// extern void SetStack(unsigned short selector,unsigned long stackptr);
 
-// This function will get the current stack selector and pointer and save
-// them off.
-#pragma aux GetStack =  \
-   "mov  [edi],esp"     \
-   "mov  ax,ss"         \
-   "mov  [esi],ax"      \
-   parm [esi] [edi]     \
-   modify [eax esi edi];
+// // This function will get the current stack selector and pointer and save
+// // them off.
+// #pragma aux GetStack =  \
+//    "mov  [edi],esp"     \
+//    "mov  ax,ss"         \
+//    "mov  [esi],ax"      \
+//    parm [esi] [edi]     \
+//    modify [eax esi edi];
 
-// This function will set the stack selector and pointer to the specified
-// values.
-#pragma aux SetStack =  \
-   "mov  ss,ax"         \
-   "mov  esp,edx"       \
-   parm [ax] [edx]      \
-   modify [eax edx];
+// // This function will set the stack selector and pointer to the specified
+// // values.
+// #pragma aux SetStack =  \
+//    "mov  ss,ax"         \
+//    "mov  esp,edx"       \
+//    parm [ax] [edx]      \
+//    modify [eax edx];
 
-int BLASTER_DMAChannel;
+int BLASTER_DMAChannel = 0;
 
 int BLASTER_ErrorCode = BLASTER_Ok;
 
@@ -262,6 +266,9 @@ void BLASTER_EnableInterrupt
    )
 
    {
+   int32_t mask = inp(0x21) & ~(1 << BLASTER_Config.Interrupt);
+   outp(0x21, mask);
+#if 0
    int Irq;
    int mask;
 
@@ -280,7 +287,7 @@ void BLASTER_EnableInterrupt
       mask = inp( 0x21 ) & ~( 1 << 2 );
       outp( 0x21, mask  );
       }
-
+#endif
    }
 
 
@@ -296,6 +303,12 @@ void BLASTER_DisableInterrupt
    )
 
    {
+   int32_t mask;
+   // Restore interrupt mask
+   mask  = inp(0x21) & ~(1 << BLASTER_Config.Interrupt);
+   mask |= BLASTER_IntController1Mask & (1 << BLASTER_Config.Interrupt);
+   outp(0x21, mask);
+#if 0
    int Irq;
    int mask;
 
@@ -317,6 +330,7 @@ void BLASTER_DisableInterrupt
       mask |= BLASTER_IntController2Mask & ( 1 << ( Irq - 8 ) );
       outp( 0xA1, mask  );
       }
+#endif
    }
 
 
@@ -327,7 +341,7 @@ void BLASTER_DisableInterrupt
    transfer.  Calls the user supplied callback function.
 ---------------------------------------------------------------------*/
 
-void __interrupt __far BLASTER_ServiceInterrupt
+static void __interrupt __far BLASTER_ServiceInterrupt
    (
    void
    )
@@ -377,6 +391,7 @@ void __interrupt __far BLASTER_ServiceInterrupt
       inp( BLASTER_Config.Address + BLASTER_DataAvailablePort );
       }
 
+
    // Keep track of current buffer
    BLASTER_CurrentDMABuffer += BLASTER_TransferLength;
 
@@ -399,6 +414,7 @@ void __interrupt __far BLASTER_ServiceInterrupt
          }
       }
 
+
    // Call the caller's callback function
    if ( BLASTER_CallBack != NULL )
       {
@@ -411,10 +427,10 @@ void __interrupt __far BLASTER_ServiceInterrupt
    #endif
 
    // send EOI to Interrupt Controller
-   if ( BLASTER_Config.Interrupt > 7 )
-      {
-      outp( 0xA0, 0x20 );
-      }
+   // if ( BLASTER_Config.Interrupt > 7 )
+   //    {
+   //    outp( 0xA0, 0x20 );
+   //    }
 
    outp( 0x20, 0x20 );
    }
@@ -891,7 +907,7 @@ void BLASTER_StopPlayback
 
 int BLASTER_SetupDMABuffer
    (
-   char *BufferPtr,
+   uint8_t *BufferPtr,
    int   BufferSize,
    int   mode
    )
@@ -948,7 +964,7 @@ int BLASTER_GetCurrentPos
    )
 
    {
-   char *CurrentAddr;
+   uint8_t *CurrentAddr;
    int   DmaChannel;
    int   offset;
 
@@ -1140,7 +1156,7 @@ int BLASTER_DSP4xx_BeginPlayback
 
 int BLASTER_BeginBufferedPlayback
    (
-   char    *BufferStart,
+   uint8_t *BufferStart,
    int      BufferSize,
    int      NumDivisions,
    unsigned SampleRate,
@@ -1321,7 +1337,7 @@ int BLASTER_DSP1xx_BeginRecord
 
 int BLASTER_BeginBufferedRecord
    (
-   char    *BufferStart,
+   uint8_t *BufferStart,
    int      BufferSize,
    int      NumDivisions,
    unsigned SampleRate,
@@ -1548,19 +1564,18 @@ int BLASTER_GetMidiVolume
    Blaster's mixer chip.
 ---------------------------------------------------------------------*/
 
-int BLASTER_SetMidiVolume
-   (
+void BLASTER_SetMidiVolume(
    int volume
    )
 
    {
    int data;
-   int status;
+   // int status;
 
    volume = min( 255, volume );
    volume = max( 0, volume );
 
-   status = BLASTER_Ok;
+   // status = BLASTER_Ok;
    switch( BLASTER_MixerType )
       {
       case SBPro :
@@ -1576,10 +1591,10 @@ int BLASTER_SetMidiVolume
 
       default :
          BLASTER_SetErrorCode( BLASTER_NoMixer );
-         status = BLASTER_Error;
+         // status = BLASTER_Error;
       }
 
-   return( status );
+   // return( status );
    }
 
 /*---------------------------------------------------------------------
@@ -1970,8 +1985,8 @@ void BLASTER_UnlockMemory
    DPMI_Unlock( BLASTER_SamplePacketSize );
    DPMI_Unlock( BLASTER_SampleRate );
    DPMI_Unlock( BLASTER_HaltTransferCommand );
-   DPMI_Unlock( ( int )BLASTER_SoundPlaying );
-   DPMI_Unlock( ( int )BLASTER_SoundRecording );
+   DPMI_Unlock( /*( int )*/BLASTER_SoundPlaying );
+   DPMI_Unlock( /*( int )*/BLASTER_SoundRecording );
    DPMI_Unlock( BLASTER_CallBack );
    DPMI_Unlock( BLASTER_IntController1Mask );
    DPMI_Unlock( BLASTER_IntController2Mask );
@@ -2018,8 +2033,8 @@ int BLASTER_LockMemory
    status |= DPMI_Lock( BLASTER_SamplePacketSize );
    status |= DPMI_Lock( BLASTER_SampleRate );
    status |= DPMI_Lock( BLASTER_HaltTransferCommand );
-   status |= DPMI_Lock( ( ( int )BLASTER_SoundPlaying ) );
-   status |= DPMI_Lock( ( ( int )BLASTER_SoundRecording ) );
+   status |= DPMI_Lock( ( /*( int )*/BLASTER_SoundPlaying ) );
+   status |= DPMI_Lock( ( /*( int )*/BLASTER_SoundRecording ) );
    status |= DPMI_Lock( BLASTER_CallBack );
    status |= DPMI_Lock( BLASTER_IntController1Mask );
    status |= DPMI_Lock( BLASTER_IntController2Mask );
@@ -2078,7 +2093,7 @@ static unsigned short allocateTimerStack
       }
 
    // Couldn't allocate memory.
-   return( NULL );
+   return( 0 );
    }
 
 
@@ -2097,7 +2112,7 @@ static void deallocateTimerStack
    {
    union REGS regs;
 
-   if ( selector != NULL )
+   if ( selector != 0 )
       {
       // clear all registers
       memset( &regs, 0, sizeof( regs ) );
@@ -2244,17 +2259,20 @@ int BLASTER_Init
          return( status );
          }
 
-      StackSelector = allocateTimerStack( kStackSize );
-      if ( StackSelector == NULL )
-         {
-         BLASTER_UnlockMemory();
-         BLASTER_SetErrorCode( BLASTER_OutOfMemory );
-         return( BLASTER_Error );
-         }
+      // StackSelector = allocateTimerStack( kStackSize );
+      // if ( StackSelector == 0 )
+      //    {
+      //    BLASTER_UnlockMemory();
+      //    BLASTER_SetErrorCode( BLASTER_OutOfMemory );
+      //    return( BLASTER_Error );
+      //    }
 
       // Leave a little room at top of stack just for the hell of it...
-      StackPointer = kStackSize - sizeof( long );
+      // StackPointer = kStackSize - sizeof( long );
 
+      // FIXME: Verify this
+      replaceInterrupt(BLASTER_OldInt, BLASTER_NewInt, Interrupt, BLASTER_ServiceInterrupt);
+#if 0
       BLASTER_OldInt = _dos_getvect( Interrupt );
       if ( Irq < 8 )
          {
@@ -2272,6 +2290,7 @@ int BLASTER_Init
             return( BLASTER_Error );
             }
          }
+#endif
 
       BLASTER_Installed = TRUE;
       status = BLASTER_Ok;
@@ -2309,11 +2328,12 @@ void BLASTER_Shutdown
    // Restore the original interrupt
    Irq = BLASTER_Config.Interrupt;
    Interrupt = BLASTER_Interrupts[ Irq ];
-   if ( Irq >= 8 )
-      {
-      IRQ_RestoreVector( Interrupt );
-      }
-   _dos_setvect( Interrupt, BLASTER_OldInt );
+   // if ( Irq >= 8 )
+   //    {
+   //    IRQ_RestoreVector( Interrupt );
+   //    }
+   // _dos_setvect( Interrupt, BLASTER_OldInt );
+   restoreInterrupt(Interrupt, BLASTER_OldInt, BLASTER_NewInt);
 
    BLASTER_SoundPlaying = FALSE;
 
@@ -2323,8 +2343,8 @@ void BLASTER_Shutdown
 
    BLASTER_UnlockMemory();
 
-   deallocateTimerStack( StackSelector );
-   StackSelector = NULL;
+   // deallocateTimerStack( StackSelector );
+   // StackSelector = 0;
 
    BLASTER_Installed = FALSE;
    }

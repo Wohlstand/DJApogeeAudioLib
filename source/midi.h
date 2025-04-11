@@ -31,6 +31,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef __MIDI_H
 #define __MIDI_H
 
+#include "djconfig.h"
+
 enum MIDI_Errors
    {
    MIDI_Warning = -2,

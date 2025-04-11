@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <conio.h>
 #include <dos.h>
+#include <sys/nearptr.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -40,9 +41,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
    Function prototypes
 ---------------------------------------------------------------------*/
 
-char *LoadFile( char *filename, int *length );
-char *GetUserText( const char *parameter );
-int   CheckUserParm( const char *parameter );
+uint8_t *LoadFile( char *filename, int *length );
+char *GetUserText(const char *parameter , int _argc, char **_argv);
+int   CheckUserParm( const char *parameter, int _argc, char **_argv );
 void  DefaultExtension( char *path, char *extension );
 
 #define TRUE  ( 1 == 1 )
@@ -63,13 +64,15 @@ int SoundCardNums[] =
    SoundScape, UltraSound, SoundSource, TandySoundSource
    };
 
+extern void  USER_InitArgs(int argc, char **argv);
+
 /*---------------------------------------------------------------------
    Function: main
 
    Sets up sound cards, calls the demo, and then cleans up.
 ---------------------------------------------------------------------*/
 
-void main
+int main
    (
    int argc,
    char *argv[]
@@ -86,14 +89,17 @@ void main
    int length;
    int voice;
    fx_device device;
-   char *SoundPtr = NULL;
+   fx_blaster_config blaster;
+   uint8_t *SoundPtr = NULL;
    char *ptr;
    char  filename[ 128 ];
    char ch;
 
+   USER_InitArgs(argc, argv);
+
    printf( "\nPS Version 1.0 by Jim Dose\n" );
 
-   if ( ( CheckUserParm( "?" ) ) || ( argc < 2 ) )
+   if ( ( CheckUserParm( "?", argc, argv ) ) || ( argc < 2 ) )
       {
       int index;
 
@@ -109,8 +115,10 @@ void main
 
       printf( "\nDefault: PS [ soundfile ] CARD=0 VOICES=4 "
                 "BITS=8 MONO RATE=11000\n\n" );
-      exit( 0 );
+      return 0;
       }
+
+   __djgpp_nearptr_enable();
 
    // Default is Sound Blaster
    card     = 0;
@@ -120,43 +128,47 @@ void main
    reverb   = 0;
    rate     = 11000;
 
-   ptr = GetUserText( "VOICES" );
+   FX_GetBlasterSettings( &blaster );
+   printf("Card setup: A=0x%lX, I=%ld, D8=%ld, D16=%ld\n", blaster.Address, blaster.Interrupt, blaster.Dma8, blaster.Dma16);
+   FX_SetupSoundBlaster(blaster, &device.MaxVoices, &device.MaxSampleBits, &device.MaxChannels);
+
+   ptr = GetUserText( "VOICES", argc, argv );
    if ( ptr != NULL )
       {
       sscanf( ptr, "%d", &voices );
       }
 
-   ptr = GetUserText( "BITS" );
+   ptr = GetUserText( "BITS", argc, argv );
    if ( ptr != NULL )
       {
       sscanf( ptr, "%d", &bits );
       }
 
-   ptr = GetUserText( "RATE" );
+   ptr = GetUserText( "RATE", argc, argv );
    if ( ptr != NULL )
       {
       sscanf( ptr, "%d", &rate );
       }
 
-   ptr = GetUserText( "REVERB" );
+   ptr = GetUserText( "REVERB", argc, argv );
    if ( ptr != NULL )
       {
       sscanf( ptr, "%d", &reverb );
       }
 
-   ptr = GetUserText( "MONO" );
+   ptr = GetUserText( "MONO", argc, argv );
    if ( ptr != NULL )
       {
       channels = 1;
       }
 
-   ptr = GetUserText( "STEREO" );
+   ptr = GetUserText( "STEREO", argc, argv );
    if ( ptr != NULL )
       {
       channels = 2;
       }
 
-   ptr = GetUserText( "CARD" );
+   ptr = GetUserText( "CARD", argc, argv );
    if ( ptr != NULL )
       {
       sscanf( ptr, "%d", &card );
@@ -165,7 +177,7 @@ void main
    if ( ( card < 0 ) || ( card >= NUMCARDS ) )
       {
       printf( "Value out of range for sound card #: %d\n", card );
-      exit( 1 );
+      return 1;
       }
 
    strcpy( filename, argv[ 1 ] );
@@ -183,27 +195,31 @@ void main
          if ( !SoundPtr )
             {
             printf( "Cannot open '%s' for read.\n", argv[ 1 ] );
-            exit( 1 );
+            return 1;
             }
          }
       }
 
+   printf("Init card...\n");
    status = FX_SetupCard( card, &device );
    if ( status != FX_Ok )
       {
       printf( "%s\n", FX_ErrorString( status ) );
-      exit( 1 );
+      return 1;
       }
 
+   printf("Init FX...\n");
    status = FX_Init( card, voices, channels, bits, rate );
    if ( status != FX_Ok )
       {
       printf( "%s\n", FX_ErrorString( status ) );
-      exit( 1 );
+      return 1;
       }
 
+   printf("Set reverb...\n");
    FX_SetReverb( reverb );
 
+   printf("Set volume...\n");
    FX_SetVolume( 255 );
 
    printf( "Playing file '%s'.\n\n", filename );
@@ -239,6 +255,7 @@ void main
    FX_Shutdown();
 
    printf( "\n" );
+   return 0;
    }
 
 
@@ -248,8 +265,7 @@ void main
    Loads a file from disk.
 ---------------------------------------------------------------------*/
 
-char *LoadFile
-   (
+uint8_t *LoadFile(
    char *filename,
    int  *length
    )
@@ -257,7 +273,7 @@ char *LoadFile
    {
    FILE   *in;
    long   size;
-   char   *ptr;
+   uint8_t *ptr;
 
    if ( ( in = fopen( filename, "rb" ) ) == NULL )
       {
@@ -268,7 +284,7 @@ char *LoadFile
    size = ftell( in );
    fseek( in, 0, SEEK_SET );
 
-   ptr = ( char * )malloc( size );
+   ptr = ( uint8_t * )malloc( size );
    if ( ptr == NULL )
       {
       printf( "Out of memory while reading '%s'.\n", filename );
@@ -298,7 +314,7 @@ char *LoadFile
 
 char *GetUserText
    (
-   const char *parameter
+   const char *parameter, int _argc, char **_argv
    )
 
    {
@@ -307,8 +323,8 @@ char *GetUserText
    char *text;
    char *ptr;
 
-   extern int   _argc;
-   extern char **_argv;
+   // extern int   _argc;
+   // extern char **_argv;
 
    text = NULL;
    length = strlen( parameter );
@@ -338,17 +354,17 @@ char *GetUserText
 ---------------------------------------------------------------------*/
 
 int CheckUserParm
-   (
-   const char *parameter
-   )
+(
+const char *parameter
+, int _argc, char **_argv)
 
    {
    int i;
    int found;
    char *ptr;
 
-   extern int   _argc;
-   extern char **_argv;
+   // extern int   _argc;
+   // extern char **_argv;
 
    found = FALSE;
    i = 1;

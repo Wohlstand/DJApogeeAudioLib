@@ -31,6 +31,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef __DMA_H
 #define __DMA_H
 
+#include <stdint.h>
+
 enum DMA_ERRORS
    {
    DMA_Error = -1,
@@ -58,22 +60,22 @@ int DMA_VerifyChannel
    );
 
 int DMA_SetupTransfer
-   (
-   int  channel,
-   char *address,
-   int  length,
-   int  mode
-   );
+(
+int  channel,
+uint8_t *address,
+int  length,
+int  mode
+);
 
 int DMA_EndTransfer
    (
    int channel
    );
 
-char *DMA_GetCurrentPos
-   (
-   int channel
-   );
+uint8_t *DMA_GetCurrentPos
+(
+int32_t channel
+);
 
 int DMA_GetTransferCount
    (

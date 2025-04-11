@@ -31,10 +31,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef ___GUSWAVE_H
 #define ___GUSWAVE_H
 
+#include <stdint.h>
+
 #define TRUE  ( 1 == 1 )
 #define FALSE ( !TRUE )
 
-#define LOADDS _loadds
+#define LOADDS /*_loadds*/
 
 #define VOC_8BIT            0x0
 #define VOC_CT4_ADPCM       0x1
@@ -72,7 +74,7 @@ typedef enum
    } playbackstatus;
 
 
-typedef volatile struct VoiceNode
+typedef /*volatile*/ struct VoiceNode
    {
    struct VoiceNode *next;
    struct VoiceNode *prev;
@@ -83,7 +85,7 @@ typedef volatile struct VoiceNode
 
    int num;
 
-   unsigned long  mem;           /* location in ultrasound memory */
+   intptr_t       mem;           /* location in ultrasound memory */
    int            Active;        /* this instance in use */
    int            GF1voice;      /* handle to active voice */
 

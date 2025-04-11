@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "djconfig.h"
 #include "a_dpmi.h"
 #include "dma.h"
 #include "interrup.h"
@@ -41,7 +42,60 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "pas16.h"
 #include "_pas16.h"
 
-#define USESTACK
+
+int PAS_TestAddress(int address)
+{
+    int a;
+
+    asm
+    (
+       "mov   $0x0b8b, %%dx \n"
+       "xor   %%ax, %%dx \n"
+       "in    %%dx, %%al \n"
+       "cmp   $0x0ff, %%al \n"
+       "je    TestExit \n"
+       "mov   %%al, %%ah \n"
+       "xor   $0x0e0, %%al \n"
+       "out   %%al, %%dx \n"
+       "jmp   TestDelay1 \n"
+       "TestDelay1: \n"
+       "jmp   TestDelay2 \n"
+       "TestDelay2: \n"
+       "in    %%dx, %%al \n"
+       "xchg  %%ah, %%al \n"
+       "out   %%al, %%dx \n"
+       "sub   %%ah, %%al \n"
+       "TestExit: \n"
+       "and   $0x0ff, %%eax"
+       : [dx]"=r" (a)
+       : [eax]"r" (address)
+    );
+
+    return a;
+}
+
+// #pragma aux PAS_TestAddress = \
+//    "mov   dx, 0b8bh", \
+//    "xor    dx, ax", \
+//    "in    al, dx", \
+//    "cmp   al, 0ffh", \
+//    "je    TestExit", \
+//    "mov   ah, al", \
+//    "xor   al, 0e0h", \
+//    "out   dx, al", \
+//    "jmp   TestDelay1", \
+//    "TestDelay1:", \
+//    "jmp   TestDelay2", \
+//    "TestDelay2:", \
+//    "in    al, dx", \
+//    "xchg  al, ah", \
+//    "out   dx, al", \
+//    "sub   al, ah", \
+//    "TestExit:", \
+//    "and   eax, 0ffh" \
+//    parm [ eax ] modify exact [ eax dx ];
+
+// #define USESTACK
 
 static const int PAS_Interrupts[ PAS_MaxIrq + 1 ]  =
    {
@@ -51,7 +105,11 @@ static const int PAS_Interrupts[ PAS_MaxIrq + 1 ]  =
       0x74, INVALID, INVALID,    0x77
    };
 
+#if defined __DJGPP__ || defined __CCDL__
+static _go32_dpmi_seginfo PAS_OldInt, PAS_NewInt;
+#elif defined __WATCOMC__
 static void    ( interrupt far *PAS_OldInt )( void );
+#endif
 
 static int PAS_IntController1Mask;
 static int PAS_IntController2Mask;
@@ -91,7 +149,7 @@ void ( *PAS_CallBack )( void );
 // adequate stack size
 #define kStackSize 2048
 
-static unsigned short StackSelector = NULL;
+static unsigned short StackSelector = 0;
 static unsigned long  StackPointer;
 
 static unsigned short oldStackSelector;
@@ -1619,7 +1677,7 @@ static unsigned short allocateTimerStack
       }
 
    // Couldn't allocate memory.
-   return( NULL );
+   return( 0 );
    }
 
 
@@ -1638,7 +1696,7 @@ static void deallocateTimerStack
    {
    union REGS regs;
 
-   if ( selector != NULL )
+   if ( selector != 0 )
       {
       // clear all registers
       memset( &regs, 0, sizeof( regs ) );
@@ -1726,7 +1784,7 @@ int PAS_Init
       }
 
    StackSelector = allocateTimerStack( kStackSize );
-   if ( StackSelector == NULL )
+   if ( StackSelector == 0 )
       {
       PAS_UnlockMemory();
       PAS_SetErrorCode( PAS_OutOfMemory );
@@ -1738,6 +1796,9 @@ int PAS_Init
 
    // Install our interrupt handler
    Interrupt = PAS_Interrupts[ PAS_Irq ];
+   // FIXME: Verify if this is valid
+   replaceInterrupt(PAS_OldInt, PAS_NewInt, Interrupt, PAS_ServiceInterrupt);
+#if 0
    PAS_OldInt = _dos_getvect( Interrupt );
    if ( PAS_Irq < 8 )
       {
@@ -1755,6 +1816,7 @@ int PAS_Init
          return( PAS_Error );
          }
       }
+#endif
 
    // Enable PAS Sound
    data  = PAS_State->audiofilt;
@@ -1799,7 +1861,8 @@ void PAS_Shutdown
          {
          IRQ_RestoreVector( Interrupt );
          }
-      _dos_setvect( Interrupt, PAS_OldInt );
+      restoreInterrupt(Interrupt, PAS_OldInt, PAS_NewInt);
+      // _dos_setvect( Interrupt, PAS_OldInt );
 
       PAS_SoundPlaying = FALSE;
 
@@ -1818,7 +1881,7 @@ void PAS_Shutdown
       PAS_UnlockMemory();
 
       deallocateTimerStack( StackSelector );
-      StackSelector = NULL;
+      StackSelector = 0;
 
       PAS_Installed = FALSE;
       }

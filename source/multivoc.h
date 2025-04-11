@@ -31,6 +31,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef __MULTIVOC_H
 #define __MULTIVOC_H
 
+#include <stdint.h>
+
 #define MV_MinVoiceHandle  1
 
 extern int MV_ErrorCode;
@@ -79,32 +81,32 @@ void  MV_SetReverbDelay( int delay );
 int   MV_SetMixMode( int numchannels, int samplebits );
 int   MV_StartPlayback( void );
 void  MV_StopPlayback( void );
-int   MV_StartRecording( int MixRate, void ( *function )( char *ptr, int length ) );
+int   MV_StartRecording(int MixRate, void (*function)(uint8_t *, int) );
 void  MV_StopRecord( void );
-int   MV_StartDemandFeedPlayback( void ( *function )( char **ptr, unsigned long *length ),
-         int rate, int pitchoffset, int vol, int left, int right,
-         int priority, unsigned long callbackval );
-int   MV_PlayRaw( char *ptr, unsigned long length,
+int   MV_StartDemandFeedPlayback(void (*function)(uint8_t **, unsigned long *),
+int rate, int pitchoffset, int vol, int left, int right,
+int priority, unsigned long callbackval );
+int   MV_PlayRaw( uint8_t *ptr, unsigned long length,
          unsigned rate, int pitchoffset, int vol, int left,
          int right, int priority, unsigned long callbackval );
-int   MV_PlayLoopedRaw( char *ptr, unsigned long length,
-         char *loopstart, char *loopend, unsigned rate, int pitchoffset,
-         int vol, int left, int right, int priority,
-         unsigned long callbackval );
-int   MV_PlayWAV( char *ptr, int pitchoffset, int vol, int left,
-         int right, int priority, unsigned long callbackval );
-int   MV_PlayWAV3D( char *ptr, int pitchoffset, int angle, int distance,
+int   MV_PlayLoopedRaw(uint8_t *ptr, long length,
+uint8_t *loopstart, uint8_t *loopend, unsigned rate, int pitchoffset,
+int vol, int left, int right, int priority,
+unsigned long callbackval );
+int   MV_PlayWAV(uint8_t *ptr, int pitchoffset, int vol, int left,
+int right, int priority, unsigned long callbackval );
+int   MV_PlayWAV3D( uint8_t *ptr, int pitchoffset, int angle, int distance,
          int priority, unsigned long callbackval );
-int   MV_PlayLoopedWAV( char *ptr, long loopstart, long loopend,
+int   MV_PlayLoopedWAV( uint8_t *ptr, long loopstart, long loopend,
          int pitchoffset, int vol, int left, int right, int priority,
          unsigned long callbackval );
-int   MV_PlayVOC3D( char *ptr, int pitchoffset, int angle, int distance,
+int   MV_PlayVOC3D(uint8_t *ptr, int pitchoffset, int angle, int distance,
+int priority, unsigned long callbackval );
+int   MV_PlayVOC( uint8_t *ptr, int pitchoffset, int vol, int left, int right,
          int priority, unsigned long callbackval );
-int   MV_PlayVOC( char *ptr, int pitchoffset, int vol, int left, int right,
-         int priority, unsigned long callbackval );
-int   MV_PlayLoopedVOC( char *ptr, long loopstart, long loopend,
-         int pitchoffset, int vol, int left, int right, int priority,
-         unsigned long callbackval );
+int   MV_PlayLoopedVOC(uint8_t *ptr, long loopstart, long loopend,
+int pitchoffset, int vol, int left, int right, int priority,
+unsigned long callbackval );
 void  MV_CreateVolumeTable( int index, int volume, int MaxVolume );
 void  MV_SetVolume( int volume );
 int   MV_GetVolume( void );

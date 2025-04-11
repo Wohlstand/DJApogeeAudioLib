@@ -31,18 +31,34 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef __INTERRUPT_H
 #define __INTERRUPT_H
 
-unsigned long DisableInterrupts( void );
-void          RestoreInterrupts( unsigned long flags );
+#include <stdio.h>
+#include <stdint.h>
 
-#pragma aux DisableInterrupts = \
-   "pushfd",                    \
-   "pop    eax",                \
-   "cli"                        \
-   modify [ eax ];
+static uint32_t DisableInterrupts(void);
+static void RestoreInterrupts(uint32_t flags);
 
-#pragma aux RestoreInterrupts = \
-   "push   eax",                \
-   "popfd"                      \
-   parm [ eax ];
+static uint32_t DisableInterrupts(void)
+{
+    uint32_t a;
+    asm
+    (
+        "pushfl \n"
+        "popl %0 \n"
+        "cli"
+        : "=r" (a)
+    );
+    return a;
+}
+
+static void RestoreInterrupts(uint32_t flags)
+{
+    asm
+    (
+        "pushl %0 \n"
+        "popfl"
+        :
+        : "r" (flags)
+    );
+}
 
 #endif

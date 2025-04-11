@@ -28,19 +28,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
    (c) Copyright 1994 James R. Dose.  All Rights Reserved.
 **********************************************************************/
 
-#include <stdio.h>
 #include <stdlib.h>
 #include "task_man.h"
 #include "sndcards.h"
 #include "music.h"
 #include "midi.h"
 #include "al_midi.h"
-#include "pas16.h"
+// #include "pas16.h"
 #include "blaster.h"
-#include "gusmidi.h"
+// #include "gusmidi.h"
 #include "mpu401.h"
-#include "awe32.h"
-#include "sndscape.h"
+// #include "awe32.h"
+// #include "sndscape.h"
 #include "ll_man.h"
 #include "user.h"
 
@@ -115,7 +114,8 @@ char *MUSIC_ErrorString
 
             case ProAudioSpectrum :
             case SoundMan16 :
-               ErrorString = PAS_ErrorString( PAS_Error );
+               // ErrorString = PAS_ErrorString( PAS_Error );
+               ErrorString = "ProAudioSpectrum support is not built";
                break;
 
             case Adlib :
@@ -128,15 +128,18 @@ char *MUSIC_ErrorString
                break;
 
             case SoundScape :
-               ErrorString = SOUNDSCAPE_ErrorString( SOUNDSCAPE_Error );
+               // ErrorString = SOUNDSCAPE_ErrorString( SOUNDSCAPE_Error );
+               ErrorString = "SoundScape support is not built";
                break;
 
             case Awe32 :
-               ErrorString = AWE32_ErrorString( AWE32_Error );
+               // ErrorString = AWE32_ErrorString( AWE32_Error );
+               ErrorString = "AWE32 support is not built";
                break;
 
             case UltraSound :
-               ErrorString = GUS_ErrorString( GUS_Error );
+               // ErrorString = GUS_ErrorString( GUS_Error );
+               ErrorString = "GUS support is not built";
                break;
 
             default :
@@ -302,18 +305,18 @@ int MUSIC_Shutdown
          break;
 
       case Awe32 :
-         AWE32_Shutdown();
+         // AWE32_Shutdown();
          BLASTER_RestoreMidiVolume();
          break;
 
       case ProAudioSpectrum :
       case SoundMan16 :
          AL_Shutdown();
-         PAS_RestoreMusicVolume();
+         // PAS_RestoreMusicVolume();
          break;
 
       case UltraSound :
-         GUSMIDI_Shutdown();
+         // GUSMIDI_Shutdown();
          break;
       }
 
@@ -666,6 +669,9 @@ int MUSIC_InitAWE32
    )
 
    {
+      MUSIC_SetErrorCode( MUSIC_SoundCardError );
+      return( MUSIC_Error );
+#if 0
    int status;
 
    status = AWE32_Init();
@@ -698,6 +704,7 @@ int MUSIC_InitAWE32
    MIDI_SetMidiFuncs( Funcs );
 
    return( status );
+#endif
    }
 
 
@@ -760,12 +767,12 @@ int MUSIC_InitFM
          Funcs->SetVolume = NULL;
          Funcs->GetVolume = NULL;
 
-         passtatus = PAS_SaveMusicVolume();
-         if ( passtatus == PAS_Ok )
-            {
-            Funcs->SetVolume = PAS_SetFMVolume;
-            Funcs->GetVolume = PAS_GetFMVolume;
-            }
+         // passtatus = PAS_SaveMusicVolume();
+         // if ( passtatus == PAS_Ok )
+         //    {
+         //    Funcs->SetVolume = PAS_SetFMVolume;
+         //    Funcs->GetVolume = PAS_GetFMVolume;
+         //    }
          break;
       }
 
@@ -796,12 +803,14 @@ int MUSIC_InitMidi
 
    if ( card == SoundScape )
       {
-      Address = SOUNDSCAPE_GetMIDIPort();
-      if ( Address < SOUNDSCAPE_Ok )
-         {
          MUSIC_SetErrorCode( MUSIC_SoundCardError );
          return( MUSIC_Error );
-         }
+      // Address = SOUNDSCAPE_GetMIDIPort();
+      // if ( Address < SOUNDSCAPE_Ok )
+      //    {
+      //    MUSIC_SetErrorCode( MUSIC_SoundCardError );
+      //    return( MUSIC_Error );
+      //    }
       }
 
    if ( MPU_Init( Address ) != MPU_Ok )
@@ -843,6 +852,9 @@ int MUSIC_InitGUS
    )
 
    {
+      MUSIC_SetErrorCode( MUSIC_SoundCardError );
+      return( MUSIC_Error );
+#if 0
    int status;
 
    status = MUSIC_Ok;
@@ -868,6 +880,7 @@ int MUSIC_InitGUS
    MIDI_SetMidiFuncs( Funcs );
 
    return( status );
+#endif
    }
 
 
@@ -1011,7 +1024,7 @@ void MUSIC_StopFade
 void MUSIC_RerouteMidiChannel
    (
    int channel,
-   int cdecl ( *function )( int event, int c1, int c2 )
+   int /*cdecl*/ ( *function )( int event, int c1, int c2 )
    )
 
    {

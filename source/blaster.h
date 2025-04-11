@@ -31,6 +31,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef __BLASTER_H
 #define __BLASTER_H
 
+#include <stdint.h>
+
 typedef struct
    {
    unsigned Address;
@@ -45,7 +47,7 @@ typedef struct
 extern BLASTER_CONFIG BLASTER_Config;
 extern int BLASTER_DMAChannel;
 
-#define UNDEFINED -1
+#define UNDEFINED (unsigned long)-1
 
 enum BLASTER_ERRORS
    {
@@ -111,23 +113,24 @@ void  BLASTER_SetPlaybackRate( unsigned rate );
 unsigned BLASTER_GetPlaybackRate( void );
 int   BLASTER_SetMixMode( int mode );
 void  BLASTER_StopPlayback( void );
-int   BLASTER_SetupDMABuffer( char *BufferPtr, int BufferSize, int mode );
+int   BLASTER_SetupDMABuffer(uint8_t *BufferPtr, int BufferSize, int mode );
 int   BLASTER_GetCurrentPos( void );
 int   BLASTER_DSP1xx_BeginPlayback( int length );
 int   BLASTER_DSP2xx_BeginPlayback( int length );
 int   BLASTER_DSP4xx_BeginPlayback( int length );
-int   BLASTER_BeginBufferedRecord( char *BufferStart, int BufferSize,
-          int NumDivisions, unsigned SampleRate, int MixMode,
-          void ( *CallBackFunc )( void ) );
-int   BLASTER_BeginBufferedPlayback( char *BufferStart,
-         int BufferSize, int NumDivisions, unsigned SampleRate,
-         int MixMode, void ( *CallBackFunc )( void ) );
+int   BLASTER_DSP1xx_BeginRecord( int length );
+int   BLASTER_BeginBufferedRecord(uint8_t *BufferStart, int BufferSize,
+int NumDivisions, unsigned SampleRate, int MixMode,
+void ( *CallBackFunc )( void ) );
+int   BLASTER_BeginBufferedPlayback(uint8_t *BufferStart,
+int BufferSize, int NumDivisions, unsigned SampleRate,
+int MixMode, void ( *CallBackFunc )( void ) );
 void  BLASTER_WriteMixer( int reg, int data );
 int   BLASTER_ReadMixer( int reg );
 int   BLASTER_GetVoiceVolume( void );
 int   BLASTER_SetVoiceVolume( int volume );
 int   BLASTER_GetMidiVolume( void );
-int   BLASTER_SetMidiVolume( int volume );
+void  BLASTER_SetMidiVolume( int volume );
 int   BLASTER_CardHasMixer( void );
 void  BLASTER_SaveVoiceVolume( void );
 void  BLASTER_RestoreVoiceVolume( void );

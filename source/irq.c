@@ -29,8 +29,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 **********************************************************************/
 
 #include <dos.h>
-#include <stdlib.h>
 #include "irq.h"
+
+#ifndef IRQ_NO_SET_VECTOR
+#include <stdlib.h>
 
 #define D32RealSeg(P) ( ( ( ( unsigned long )( P ) ) >> 4 ) & 0xFFFF )
 #define D32RealOff(P) ( ( ( unsigned long )( P ) ) & 0xF )
@@ -72,6 +74,8 @@ static unsigned short IRQ_ProtectedModeSelector;
 static union  REGS  Regs;
 static struct SREGS SegRegs;
 
+
+
 static void *D32DosMemAlloc
    (
    unsigned long size
@@ -79,21 +83,23 @@ static void *D32DosMemAlloc
 
    {
    // DPMI allocate DOS memory
-   Regs.x.eax = 0x0100;
+   Regs.d.eax = 0x0100;
 
    // Number of paragraphs requested
-   Regs.x.ebx = ( size + 15 ) >> 4;
+   Regs.d.ebx = ( size + 15 ) >> 4;
 
    int386( 0x31, &Regs, &Regs );
 
    if ( Regs.x.cflag != 0 )
       {
       // Failed
-      return ( ( unsigned long )0 );
+      return NULL;
       }
 
-   return( ( void * )( ( Regs.x.eax & 0xFFFF ) << 4  ) );
+   return( ( void * )( ( Regs.d.eax & 0xFFFF ) << 4  ) );
    }
+
+
 
 // Intermediary function: DPMI calls this, making it
 // easier to write in C
@@ -133,7 +139,7 @@ void rmcallback
    IRQ_Callback();
    }
 
-static void _interrupt _cdecl callback_x
+static void _interrupt /*_cdecl*/ callback_x
    (
    // regs pushed in this order by prologue
 
@@ -215,7 +221,7 @@ int IRQ_SetVector
    Regs.w.bx = vector;
    int386( 0x31, &Regs, &Regs );
    IRQ_ProtectedModeSelector = Regs.w.cx;
-   IRQ_ProtectedModeOffset = Regs.x.edx;
+   IRQ_ProtectedModeOffset = Regs.d.edx;
 
    // DPMI get real mode vector
    Regs.w.ax = 0x0200;
@@ -229,10 +235,10 @@ int IRQ_SetVector
    Regs.w.ax = 0x0303;
    fp = ( void far * )callback_x;
    SegRegs.ds   = FP_SEG( fp );
-   Regs.x.esi = FP_OFF( fp );
+   Regs.d.esi = FP_OFF( fp );
    fp      = ( void _far * )&rmregs;
    SegRegs.es   = FP_SEG( fp );
-   Regs.x.edi = FP_OFF( fp );
+   Regs.d.edi = FP_OFF( fp );
    int386x( 0x31, &Regs, &Regs, &SegRegs );
 
    IRQ_CallBackSegment = Regs.w.cx;
@@ -276,7 +282,7 @@ int IRQ_SetVector
    fp = function;
 
    Regs.w.cx  = FP_SEG( fp );
-   Regs.x.edx = FP_OFF( fp );
+   Regs.d.edx = FP_OFF( fp );
    int386( 0x31, &Regs, &Regs );
 
    // Install callback address as real mode handler
@@ -307,7 +313,7 @@ int IRQ_RestoreVector
    Regs.w.ax = 0x0205;
    Regs.w.bx = vector;
    Regs.w.cx = IRQ_ProtectedModeSelector;
-   Regs.x.edx = IRQ_ProtectedModeOffset;
+   Regs.d.edx = IRQ_ProtectedModeOffset;
    int386( 0x31, &Regs, &Regs );
 
    // Free callback
@@ -323,3 +329,4 @@ int IRQ_RestoreVector
 
    return( IRQ_Ok );
    }
+#endif

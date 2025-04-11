@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef __USER_H
 #define __USER_H
 
+void  USER_InitArgs(int argc, char **argv);
 int   USER_CheckParameter( const char *parameter );
 char *USER_GetText( const char *parameter );
 

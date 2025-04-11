@@ -56,7 +56,11 @@ const int SOUNDSCAPE_SampleSize[ SOUNDSCAPE_MaxMixMode + 1 ] =
    MONO_16BIT_SAMPLE_SIZE, STEREO_16BIT_SAMPLE_SIZE
    };
 
+#if defined __DJGPP__ || defined __CCDL__
+static _go32_dpmi_seginfo SOUNDSCAPE_OldInt, SOUNDSCAPE_NewInt;
+#else
 static void ( __interrupt __far *SOUNDSCAPE_OldInt )( void );
+#endif
 
 static int SOUNDSCAPE_Installed = FALSE;
 static int SOUNDSCAPE_FoundCard = FALSE;
@@ -96,7 +100,7 @@ static struct
 // adequate stack size
 #define kStackSize 2048
 
-static unsigned short StackSelector = NULL;
+static unsigned short StackSelector = 0;
 static unsigned long  StackPointer;
 
 static unsigned short oldStackSelector;
@@ -104,6 +108,7 @@ static unsigned long  oldStackPointer;
 
 // These declarations are necessary to use the inline assembly pragmas.
 
+#ifdef USESTACK
 extern void GetStack(unsigned short *selptr,unsigned long *stackptr);
 extern void SetStack(unsigned short selector,unsigned long stackptr);
 
@@ -116,13 +121,14 @@ extern void SetStack(unsigned short selector,unsigned long stackptr);
 	parm [esi] [edi]		\
 	modify [eax esi edi];
 
-// This function will set the stack selector and pointer to the specified
-// values.
+This function will set the stack selector and pointer to the specified
+values.
 #pragma aux SetStack =	\
 	"mov  ss,ax"			\
 	"mov  esp,edx"			\
 	parm [ax] [edx]		\
 	modify [eax edx];
+#endif
 
 int SOUNDSCAPE_DMAChannel = -1;
 
@@ -166,7 +172,7 @@ char *SOUNDSCAPE_ErrorString
       case SOUNDSCAPE_InitFileNotFound :
          ErrorString = "Missing SNDSCAPE.INI file for SoundScape.  This file should be \n"
                        "located in the directory indicated by the SNDSCAPE environment \n"
-                       "variable or in 'C:\SNDSCAPE' if SNDSCAPE is not set.";
+                       "variable or in 'C:\\SNDSCAPE' if SNDSCAPE is not set.";
          break;
 
       case SOUNDSCAPE_MissingProductInfo :
@@ -982,7 +988,7 @@ static unsigned short allocateTimerStack
       }
 
    // Couldn't allocate memory.
-   return( NULL );
+   return( 0 );
    }
 
 
@@ -1001,7 +1007,7 @@ static void deallocateTimerStack
    {
    union REGS regs;
 
-   if ( selector != NULL )
+   if ( selector != 0 )
       {
       // clear all registers
       memset( &regs, 0, sizeof( regs ) );
@@ -1456,10 +1462,12 @@ static int SOUNDSCAPE_Setup
 
    // Install our interrupt handler
    Interrupt = SOUNDSCAPE_Interrupts[ SOUNDSCAPE_Config.WaveIRQ ];
-   SOUNDSCAPE_OldInt = _dos_getvect( Interrupt );
+   // SOUNDSCAPE_OldInt = _dos_getvect( Interrupt );
    if ( SOUNDSCAPE_Config.WaveIRQ < 8 )
       {
-      _dos_setvect( Interrupt, SOUNDSCAPE_ServiceInterrupt );
+      // FIXME: Ensure it's valid!
+        replaceInterrupt(SOUNDSCAPE_OldInt, SOUNDSCAPE_NewInt, Interrupt, SOUNDSCAPE_ServiceInterrupt);
+      // _dos_setvect( Interrupt, SOUNDSCAPE_ServiceInterrupt );
       }
    else
       {
@@ -1554,7 +1562,7 @@ int SOUNDSCAPE_Init
       }
 
    StackSelector = allocateTimerStack( kStackSize );
-   if ( StackSelector == NULL )
+   if ( StackSelector == 0 )
       {
       SOUNDSCAPE_UnlockMemory();
       SOUNDSCAPE_SetErrorCode( SOUNDSCAPE_OutOfMemory );
@@ -1641,7 +1649,8 @@ void SOUNDSCAPE_Shutdown
       {
       IRQ_RestoreVector( Interrupt );
       }
-   _dos_setvect( Interrupt, SOUNDSCAPE_OldInt );
+   restoreInterrupt(Interrupt, SOUNDSCAPE_OldInt, SOUNDSCAPE_NewInt);
+   // _dos_setvect( Interrupt, SOUNDSCAPE_OldInt );
 
    SOUNDSCAPE_SoundPlaying = FALSE;
 
@@ -1651,10 +1660,10 @@ void SOUNDSCAPE_Shutdown
 
    SOUNDSCAPE_UnlockMemory();
 
-   if ( StackSelector != NULL )
+   if ( StackSelector != 0 )
       {
       deallocateTimerStack( StackSelector );
-      StackSelector = NULL;
+      StackSelector = 0;
       }
 
    SOUNDSCAPE_Installed = FALSE;

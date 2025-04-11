@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
    (c) Copyright 1994 James R. Dose.  All Rights Reserved.
 **********************************************************************/
 
-#define LOCKMEMORY
+// #define LOCKMEMORY
 
 #include <stddef.h>
 #include "ll_man.h"

@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
    (c) Copyright 1994 James R. Dose.  All Rights Reserved.
 **********************************************************************/
 
+
 #ifndef ___PAS16_H
 #define ___PAS16_H
 
@@ -210,7 +211,7 @@ MVFunc  *PAS_GetFunctionTable( void );
 int     PAS_GetCardSettings( void );
 void    PAS_EnableInterrupt( void );
 void    PAS_DisableInterrupt( void );
-void    interrupt far PAS_ServiceInterrupt( void );
+void    /*interrupt far*/ PAS_ServiceInterrupt( void );
 //void    interrupt PAS_ServiceInterrupt( void );
 void    PAS_Write( int Register, int Data );
 int     PAS_Read( int Register );
@@ -224,27 +225,5 @@ int     PAS_FindCard( void );
 int     PAS_CallMVFunction( unsigned long function, int ebx, int ecx, int edx );
 void    PAS_SaveState( void );
 void    PAS_RestoreState( void );
-
-
-#pragma aux PAS_TestAddress = \
-   "mov   dx, 0b8bh", \
-   "xor    dx, ax", \
-   "in    al, dx", \
-   "cmp   al, 0ffh", \
-   "je    TestExit", \
-   "mov   ah, al", \
-   "xor   al, 0e0h", \
-   "out   dx, al", \
-   "jmp   TestDelay1", \
-   "TestDelay1:", \
-   "jmp   TestDelay2", \
-   "TestDelay2:", \
-   "in    al, dx", \
-   "xchg  al, ah", \
-   "out   dx, al", \
-   "sub   al, ah", \
-   "TestExit:", \
-   "and   eax, 0ffh" \
-   parm [ eax ] modify exact [ eax dx ];
 
 #endif

@@ -35,8 +35,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define TRUE  ( 1 == 1 )
 #define FALSE ( !TRUE )
 
-extern int   _argc;
-extern char **_argv;
+static int   _argc;
+static char **_argv;
+
+void USER_InitArgs
+   (
+   int argc, char **argv
+   )
+   {
+      _argc = argc;
+      _argv = argv;
+   }
 
 /*---------------------------------------------------------------------
    Function: USER_CheckParameter

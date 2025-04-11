@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdlib.h>
 #include <math.h>
 #include <limits.h>
+#include "djconfig.h"
 #include "gusmidi.h"
 
 #define TRUE  ( 1 == 1 )
@@ -46,8 +47,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
    #define farmalloc malloc
 #else
    #define LOADDS
-   #define FAR far
-   typedef void ( interrupt *PRI )();
+   #define FAR /*far*/
+   typedef void ( /*interrupt*/ *PRI )();
 #endif
 
 #include "newgf1.h"
@@ -426,7 +427,7 @@ int GUSMIDI_LoadPatch
       return( GUS_Error );
       }
 
-   ret = gf1_load_patch( text, &patchi, &new_patch[ prog ], hold_buffer,
+   ret = gf1_load_patch( text, &patchi, &new_patch[ prog ], (struct gf1_dma_buff RFAR *)hold_buffer,
       BUFFER, ( unsigned char FAR * )wave_buff, PATCH_LOAD_8_BIT );
 
    if ( ret != OK )

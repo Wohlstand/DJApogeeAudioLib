@@ -90,8 +90,8 @@ static unsigned BLASTER_SampleRate       = BLASTER_DefaultSampleRate;
 
 static unsigned BLASTER_HaltTransferCommand = DSP_Halt8bitTransfer;
 
-volatile int   BLASTER_SoundPlaying;
-volatile int   BLASTER_SoundRecording;
+static volatile int   BLASTER_SoundPlaying;
+static volatile int   BLASTER_SoundRecording;
 
 void ( *BLASTER_CallBack )( void );
 

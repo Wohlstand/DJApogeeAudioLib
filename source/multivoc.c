@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <dos.h>
 #include <time.h>
 #include <conio.h>
+#include "djconfig.h"
 #include "a_dpmi.h"
 #include "usrhooks.h"
 #include "interrup.h"
@@ -41,14 +42,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "linklist.h"
 #include "sndcards.h"
 #include "blaster.h"
-#include "sndscape.h"
+// #include "sndscape.h"
 #include "sndsrc.h"
-#include "pas16.h"
-#include "guswave.h"
+// #include "pas16.h"
+// #include "guswave.h"
 #include "pitch.h"
 #include "multivoc.h"
 #include "_multivc.h"
-#include "debugio.h"
+// #include "debugio.h"
 
 #define RoundFixed( fixedval, bits )            \
         (                                       \
@@ -59,8 +60,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define IS_QUIET( ptr )  ( ( void * )( ptr ) == ( void * )&MV_VolumeTable[ 0 ] )
 
-static int       MV_ReverbLevel;
-static int       MV_ReverbDelay;
+static int       MV_ReverbLevel = 0;
+static int       MV_ReverbDelay = 0;
 static VOLUME16 *MV_ReverbTable = NULL;
 
 //static signed short MV_VolumeTable[ MV_MaxVolume + 1 ][ 256 ];
@@ -73,10 +74,10 @@ static int MV_Installed   = FALSE;
 static int MV_SoundCard   = SoundBlaster;
 static int MV_TotalVolume = MV_MaxTotalVolume;
 static int MV_MaxVoices   = 1;
-static int MV_Recording;
+static int MV_Recording = 0;
 
 static int MV_BufferSize = MixBufferSize;
-static int MV_BufferLength;
+static int MV_BufferLength = 0;
 
 static int MV_NumberOfBuffers = NumberOfBuffers;
 
@@ -87,40 +88,40 @@ static int MV_Bits       = 8;
 static int MV_Silence    = SILENCE_8BIT;
 static int MV_SwapLeftRight = FALSE;
 
-static int MV_RequestedMixRate;
-static int MV_MixRate;
+static int MV_RequestedMixRate = 0;
+static int MV_MixRate = 0;
 
 static int MV_DMAChannel = -1;
-static int MV_BuffShift;
+static int MV_BuffShift = 0;
 
-static int MV_TotalMemory;
+static int MV_TotalMemory = 0;
 
-static int   MV_BufferDescriptor;
-static int   MV_BufferEmpty[ NumberOfBuffers ];
-char *MV_MixBuffer[ NumberOfBuffers + 1 ];
+static int      MV_BufferDescriptor = 0;
+static int      MV_BufferEmpty[ NumberOfBuffers ];
+static uint8_t *MV_MixBuffer[ NumberOfBuffers + 1 ];
 
 static VoiceNode *MV_Voices = NULL;
 
-static volatile VoiceNode VoiceList;
-static volatile VoiceNode VoicePool;
+static volatile VoiceNode VoiceList = {NULL, NULL};
+static volatile VoiceNode VoicePool = {NULL, NULL};
 
 static int MV_MixPage      = 0;
 static int MV_VoiceHandle  = MV_MinVoiceHandle;
 
 static void ( *MV_CallBackFunc )( unsigned long ) = NULL;
-static void ( *MV_RecordFunc )( char *ptr, int length ) = NULL;
-static void ( *MV_MixFunction )( VoiceNode *voice, int buffer );
+static void ( *MV_RecordFunc )( uint8_t *ptr, int length ) = NULL;
+static void ( *MV_MixFunction )( VoiceNode *voice, int buffer ) = NULL;
 
 static int MV_MaxVolume = 63;
 
-char  *MV_HarshClipTable;
-char  *MV_MixDestination;
-short *MV_LeftVolume;
-short *MV_RightVolume;
-int    MV_SampleSize = 1;
-int    MV_RightChannelOffset;
+uint8_t *MV_HarshClipTable      __attribute__ ((externally_visible)) = NULL;
+uint8_t *MV_MixDestination      __attribute__ ((externally_visible)) = NULL;
+short *MV_LeftVolume            __attribute__ ((externally_visible)) = NULL;
+short *MV_RightVolume           __attribute__ ((externally_visible)) = NULL;
+int    MV_SampleSize            __attribute__ ((externally_visible)) = 1;
+int    MV_RightChannelOffset    __attribute__ ((externally_visible)) = 0;
 
-unsigned long MV_MixPosition;
+uint32_t MV_MixPosition         __attribute__ ((externally_visible)) = 0;
 
 int MV_ErrorCode = MV_Ok;
 
@@ -179,11 +180,13 @@ char *MV_ErrorString
          break;
 
       case MV_PasError :
-         ErrorString = PAS_ErrorString( PAS_Error );
+         // ErrorString = PAS_ErrorString( PAS_Error );
+         ErrorString = "ProAudio Spectrum support is not built";
          break;
 
       case MV_SoundScapeError :
-         ErrorString = SOUNDSCAPE_ErrorString( SOUNDSCAPE_Error );
+         // ErrorString = SOUNDSCAPE_ErrorString( SOUNDSCAPE_Error );
+         ErrorString = "SoundSccape support is not built";
          break;
 
       #ifndef SOUNDSOURCE_OFF
@@ -261,7 +264,7 @@ static void MV_Mix
    )
 
    {
-   char          *start;
+   uint8_t       *start;
    int            length;
    long           voclength;
    unsigned long  position;
@@ -380,7 +383,7 @@ void MV_StopVoice
 
    // move the voice from the play list to the free list
    LL_Remove( voice, next, prev );
-   LL_Add( &VoicePool, voice, next, prev );
+   LL_Add( (VoiceNode*)&VoicePool, voice, next, prev );
 
    RestoreInterrupts( flags );
    }
@@ -400,14 +403,14 @@ void MV_ServiceVoc
    )
 
    {
-   VoiceNode *voice;
-   VoiceNode *next;
-   char      *buffer;
+   VoiceNode *voice = NULL;
+   VoiceNode *next = NULL;
+   uint8_t   *buffer = NULL;
 
    if ( MV_DMAChannel >= 0 )
       {
       // Get the currently playing buffer
-      buffer = ( char * )DMA_GetCurrentPos( MV_DMAChannel );
+      buffer = DMA_GetCurrentPos( MV_DMAChannel );
       MV_MixPage   = ( unsigned )( buffer - MV_MixBuffer[ 0 ] );
       MV_MixPage >>= MV_BuffShift;
       }
@@ -418,6 +421,7 @@ void MV_ServiceVoc
       {
       MV_MixPage -= MV_NumberOfBuffers;
       }
+
 
    if ( MV_ReverbLevel == 0 )
       {
@@ -438,9 +442,9 @@ void MV_ServiceVoc
       }
    else
       {
-      char *end;
-      char *source;
-      char *dest;
+      uint8_t *end;
+      uint8_t *source;
+      uint8_t *dest;
       int   count;
       int   length;
 
@@ -543,7 +547,7 @@ void MV_ServiceVoc
 int leftpage  = -1;
 int rightpage = -1;
 
-void MV_ServiceGus( char **ptr, unsigned long *length )
+static void MV_ServiceGus( uint8_t **ptr, unsigned long *length )
    {
    if ( leftpage == MV_MixPage )
       {
@@ -556,7 +560,7 @@ void MV_ServiceGus( char **ptr, unsigned long *length )
    *length = MV_BufferSize;
    }
 
-void MV_ServiceRightGus( char **ptr, unsigned long *length )
+static void MV_ServiceRightGus( uint8_t **ptr, unsigned long *length )
    {
    if ( rightpage == MV_MixPage )
       {
@@ -648,14 +652,14 @@ playbackstatus MV_GetNextVOCBlock
          case 0 :
             // End of data
             if ( ( voice->LoopStart == NULL ) ||
-               ( voice->LoopStart >= ( ptr - 4 ) ) )
+               ( (uint8_t*)voice->LoopStart >= ( ptr - 4 ) ) )
                {
                voice->Playing = FALSE;
                done = TRUE;
                }
             else
                {
-               voice->BlockLength  = ( ptr - 4 ) - voice->LoopStart;
+               voice->BlockLength  = ( ptr - 4 ) - (uint8_t*)voice->LoopStart;
                voice->sound        = voice->LoopStart;
                voice->position     = 0;
                voice->length       = min( voice->BlockLength, 0x8000 );
@@ -817,7 +821,7 @@ playbackstatus MV_GetNextVOCBlock
             }
          else
             {
-            voice->LoopEnd = ( char * )blocklength;
+            voice->LoopEnd = ( uint8_t* )blocklength;
             }
 
          voice->LoopStart = voice->sound + ( unsigned long )voice->LoopStart;
@@ -1054,7 +1058,7 @@ int MV_VoicePlaying
 
    voice = MV_GetVoice( handle );
 
-   if ( voice == NULL )
+   if ( voice == &VoiceList )
       {
       return( FALSE );
       }
@@ -1400,7 +1404,7 @@ static short *MV_GetVolumeTable
 
    volume = MIX_VOLUME( vol );
 
-   table = &MV_VolumeTable[ volume ];
+   table = (short*)&MV_VolumeTable[ volume ];
 
    return( table );
    }
@@ -1824,11 +1828,11 @@ int MV_SetMixMode
 
       case ProAudioSpectrum :
       case SoundMan16 :
-         MV_MixMode = PAS_SetMixMode( mode );
+         // MV_MixMode = PAS_SetMixMode( mode );
          break;
 
       case SoundScape :
-         MV_MixMode = SOUNDSCAPE_SetMixMode( mode );
+         // MV_MixMode = SOUNDSCAPE_SetMixMode( mode );
          break;
 
       #ifndef SOUNDSOURCE_OFF
@@ -1933,7 +1937,7 @@ int MV_StartPlayback
          break;
 
       case UltraSound :
-
+#if 0
          status = GUSWAVE_StartDemandFeedPlayback( MV_ServiceGus, 1,
             MV_Bits, MV_RequestedMixRate, 0, ( MV_Channels == 1 ) ?
             0 : 24, 255, 0xffff, 0 );
@@ -1957,10 +1961,12 @@ int MV_StartPlayback
 
          MV_MixRate = MV_RequestedMixRate;
          MV_DMAChannel = -1;
+#endif
          break;
 
       case ProAudioSpectrum :
       case SoundMan16 :
+#if 0
          status = PAS_BeginBufferedPlayback( MV_MixBuffer[ 0 ],
             TotalBufferSize, MV_NumberOfBuffers,
             MV_RequestedMixRate, MV_MixMode, MV_ServiceVoc );
@@ -1973,9 +1979,11 @@ int MV_StartPlayback
 
          MV_MixRate = PAS_GetPlaybackRate();
          MV_DMAChannel = PAS_DMAChannel;
+#endif
          break;
 
       case SoundScape :
+#if 0
          status = SOUNDSCAPE_BeginBufferedPlayback( MV_MixBuffer[ 0 ],
             TotalBufferSize, MV_NumberOfBuffers, MV_RequestedMixRate,
             MV_MixMode, MV_ServiceVoc );
@@ -1988,6 +1996,7 @@ int MV_StartPlayback
 
          MV_MixRate = SOUNDSCAPE_GetPlaybackRate();
          MV_DMAChannel = SOUNDSCAPE_DMAChannel;
+#endif
          break;
 
       #ifndef SOUNDSOURCE_OFF
@@ -2031,16 +2040,16 @@ void MV_StopPlayback
          break;
 
       case UltraSound :
-         GUSWAVE_KillAllVoices();
+         // GUSWAVE_KillAllVoices();
          break;
 
       case ProAudioSpectrum :
       case SoundMan16 :
-         PAS_StopPlayback();
+         // PAS_StopPlayback();
          break;
 
       case SoundScape :
-         SOUNDSCAPE_StopPlayback();
+         // SOUNDSCAPE_StopPlayback();
          break;
 
       #ifndef SOUNDSOURCE_OFF
@@ -2079,7 +2088,7 @@ void MV_StopPlayback
 int MV_StartRecording
    (
    int MixRate,
-   void ( *function )( char *ptr, int length )
+   void ( *function )( uint8_t *ptr, int length )
    )
 
    {
@@ -2133,15 +2142,17 @@ int MV_StartRecording
 
       case ProAudioSpectrum :
       case SoundMan16 :
-         status = PAS_BeginBufferedRecord( MV_MixBuffer[ 0 ],
-            TotalBufferSize, NumberOfBuffers, MixRate, MONO_8BIT,
-            MV_ServiceRecord );
+         MV_SetErrorCode( MV_PasError );
+         return( MV_Error );
+         // status = PAS_BeginBufferedRecord( MV_MixBuffer[ 0 ],
+         //    TotalBufferSize, NumberOfBuffers, MixRate, MONO_8BIT,
+         //    MV_ServiceRecord );
 
-         if ( status != PAS_Ok )
-            {
-            MV_SetErrorCode( MV_PasError );
-            return( MV_Error );
-            }
+         // if ( status != PAS_Ok )
+         //    {
+         //    MV_SetErrorCode( MV_PasError );
+         //    return( MV_Error );
+         //    }
          break;
       }
 
@@ -2172,7 +2183,7 @@ void MV_StopRecord
 
       case ProAudioSpectrum :
       case SoundMan16 :
-         PAS_StopPlayback();
+         // PAS_StopPlayback();
          break;
       }
 
@@ -2189,7 +2200,7 @@ void MV_StopRecord
 
 int MV_StartDemandFeedPlayback
    (
-   void ( *function )( char **ptr, unsigned long *length ),
+   void ( *function )( uint8_t **ptr, unsigned long *length ),
    int rate,
    int pitchoffset,
    int vol,
@@ -2250,17 +2261,17 @@ int MV_StartDemandFeedPlayback
 ---------------------------------------------------------------------*/
 
 int MV_PlayRaw
-   (
-   char *ptr,
-   unsigned long length,
-   unsigned rate,
-   int   pitchoffset,
-   int   vol,
-   int   left,
-   int   right,
-   int   priority,
-   unsigned long callbackval
-   )
+(
+uint8_t *ptr,
+unsigned long length,
+unsigned rate,
+int   pitchoffset,
+int   vol,
+int   left,
+int   right,
+int   priority,
+unsigned long callbackval
+)
 
    {
    int status;
@@ -2281,10 +2292,10 @@ int MV_PlayRaw
 
 int MV_PlayLoopedRaw
    (
-   char *ptr,
+   uint8_t *ptr,
    long  length,
-   char *loopstart,
-   char *loopend,
+   uint8_t *loopstart,
+   uint8_t *loopend,
    unsigned rate,
    int   pitchoffset,
    int   vol,
@@ -2344,7 +2355,7 @@ int MV_PlayLoopedRaw
 
 int MV_PlayWAV
    (
-   char *ptr,
+   uint8_t *ptr,
    int   pitchoffset,
    int   vol,
    int   left,
@@ -2371,14 +2382,14 @@ int MV_PlayWAV
 ---------------------------------------------------------------------*/
 
 int MV_PlayWAV3D
-   (
-   char *ptr,
-   int  pitchoffset,
-   int  angle,
-   int  distance,
-   int  priority,
-   unsigned long callbackval
-   )
+(
+uint8_t *ptr,
+int  pitchoffset,
+int  angle,
+int  distance,
+int  priority,
+unsigned long callbackval
+)
 
    {
    int left;
@@ -2423,17 +2434,17 @@ int MV_PlayWAV3D
 ---------------------------------------------------------------------*/
 
 int MV_PlayLoopedWAV
-   (
-   char *ptr,
-   long  loopstart,
-   long  loopend,
-   int   pitchoffset,
-   int   vol,
-   int   left,
-   int   right,
-   int   priority,
-   unsigned long callbackval
-   )
+(
+uint8_t *ptr,
+long  loopstart,
+long  loopend,
+int   pitchoffset,
+int   vol,
+int   left,
+int   right,
+int   priority,
+unsigned long callbackval
+)
 
    {
    riff_header   *riff;
@@ -2483,7 +2494,7 @@ int MV_PlayLoopedWAV
       return( MV_Error );
       }
 
-   if ( strncmp( data->DATA, "data", 4 ) != 0 )
+   if ( strncmp( (char*)data->DATA, "data", 4 ) != 0 )
       {
       MV_SetErrorCode( MV_InvalidWAVFile );
       return( MV_Error );
@@ -2522,7 +2533,7 @@ int MV_PlayLoopedWAV
    voice->position    = 0;
    voice->length      = 0;
    voice->BlockLength = absloopend;
-   voice->NextBlock   = ( char * )( data + 1 );
+   voice->NextBlock   = ( uint8_t* )( data + 1 );
    voice->next        = NULL;
    voice->prev        = NULL;
    voice->priority    = priority;
@@ -2555,7 +2566,7 @@ int MV_PlayLoopedWAV
 
 int MV_PlayVOC3D
    (
-   char *ptr,
+   uint8_t *ptr,
    int  pitchoffset,
    int  angle,
    int  distance,
@@ -2606,15 +2617,15 @@ int MV_PlayVOC3D
 ---------------------------------------------------------------------*/
 
 int MV_PlayVOC
-   (
-   char *ptr,
-   int   pitchoffset,
-   int   vol,
-   int   left,
-   int   right,
-   int   priority,
-   unsigned long callbackval
-   )
+(
+uint8_t *ptr,
+int   pitchoffset,
+int   vol,
+int   left,
+int   right,
+int   priority,
+unsigned long callbackval
+)
 
    {
    int status;
@@ -2635,7 +2646,7 @@ int MV_PlayVOC
 
 int MV_PlayLoopedVOC
    (
-   char *ptr,
+   uint8_t *ptr,
    long  loopstart,
    long  loopend,
    int   pitchoffset,
@@ -2657,7 +2668,7 @@ int MV_PlayLoopedVOC
       }
 
    // Make sure it's a valid VOC file.
-   status = strncmp( ptr, "Creative Voice File", 19 );
+   status = strncmp( (char*)ptr, "Creative Voice File", 19 );
    if ( status != 0 )
       {
       MV_SetErrorCode( MV_InvalidVOCFile );
@@ -2675,7 +2686,7 @@ int MV_PlayLoopedVOC
    voice->wavetype    = VOC;
    voice->bits        = 8;
    voice->GetSound    = MV_GetNextVOCBlock;
-   voice->NextBlock   = ptr + *( unsigned short int * )( ptr + 0x14 );
+   voice->NextBlock   = (uint8_t*)ptr + *( unsigned short int * )( ptr + 0x14 );
    voice->DemandFeed  = NULL;
    voice->LoopStart   = NULL;
    voice->LoopCount   = 0;
@@ -2686,8 +2697,8 @@ int MV_PlayLoopedVOC
    voice->prev        = NULL;
    voice->priority    = priority;
    voice->callbackval = callbackval;
-   voice->LoopStart   = ( char * )loopstart;
-   voice->LoopEnd     = ( char * )loopend;
+   voice->LoopStart   = ( uint8_t * )loopstart;
+   voice->LoopEnd     = ( uint8_t * )loopend;
    voice->LoopSize    = loopend - loopstart + 1;
 
    if ( loopstart < 0 )
@@ -2978,11 +2989,15 @@ int MV_TestPlayback
 
          case ProAudioSpectrum :
          case SoundMan16 :
-            pos = PAS_GetCurrentPos();
+            // pos = PAS_GetCurrentPos();
+            MV_SetErrorCode( MV_UnsupportedCard );
+            pos = -2;
             break;
 
          case SoundScape :
-            pos = SOUNDSCAPE_GetCurrentPos();
+            // pos = SOUNDSCAPE_GetCurrentPos();
+            MV_SetErrorCode( MV_UnsupportedCard );
+            pos = -2;
             break;
 
          #ifndef SOUNDSOURCE_OFF
@@ -3037,7 +3052,7 @@ int MV_Init
    )
 
    {
-   char *ptr;
+   uint8_t *ptr;
    int  status;
    int  buffer;
    int  index;
@@ -3079,12 +3094,12 @@ int MV_Init
    // Set number of voices before calculating volume table
    MV_MaxVoices = Voices;
 
-   LL_Reset( &VoiceList, next, prev );
-   LL_Reset( &VoicePool, next, prev );
+   LL_Reset( (VoiceNode*)&VoiceList, next, prev );
+   LL_Reset( (VoiceNode*)&VoicePool, next, prev );
 
    for( index = 0; index < Voices; index++ )
       {
-      LL_Add( &VoicePool, &MV_Voices[ index ], next, prev );
+      LL_Add( (VoiceNode*)&VoicePool, &MV_Voices[ index ], next, prev );
       }
 
    // Allocate mix buffer within 1st megabyte
@@ -3109,12 +3124,13 @@ int MV_Init
    switch( soundcard )
       {
       case UltraSound :
-         status = GUSWAVE_Init( 2 );
-         if ( status != GUSWAVE_Ok )
-            {
-            //JIM
-            MV_SetErrorCode( MV_BlasterError );
-            }
+         MV_SetErrorCode( MV_BlasterError );
+         // status = GUSWAVE_Init( 2 );
+         // if ( status != GUSWAVE_Ok )
+         //    {
+         //    //JIM
+         //    MV_SetErrorCode( MV_BlasterError );
+         //    }
          break;
 
       case SoundBlaster :
@@ -3134,19 +3150,21 @@ int MV_Init
 
       case ProAudioSpectrum :
       case SoundMan16 :
-         status = PAS_Init();
-         if ( status != PAS_Ok )
-            {
-            MV_SetErrorCode( MV_PasError );
-            }
+         MV_SetErrorCode( MV_PasError );
+         // status = PAS_Init();
+         // if ( status != PAS_Ok )
+         //    {
+         //    MV_SetErrorCode( MV_PasError );
+         //    }
          break;
 
       case SoundScape :
-         status = SOUNDSCAPE_Init();
-         if ( status != SOUNDSCAPE_Ok )
-            {
-            MV_SetErrorCode( MV_SoundScapeError );
-            }
+        MV_SetErrorCode( MV_SoundScapeError );
+         // status = SOUNDSCAPE_Init();
+         // if ( status != SOUNDSCAPE_Ok )
+         //    {
+         //    MV_SetErrorCode( MV_SoundScapeError );
+         //    }
          break;
 
       #ifndef SOUNDSOURCE_OFF
@@ -3164,6 +3182,7 @@ int MV_Init
          MV_SetErrorCode( MV_UnsupportedCard );
          break;
       }
+
 
    if ( MV_ErrorCode != MV_Ok )
       {
@@ -3197,9 +3216,9 @@ int MV_Init
    MV_ReverbDelay = MV_BufferSize * 3;
 
    // Make sure we don't cross a physical page
-   if ( ( ( unsigned long )ptr & 0xffff ) + TotalBufferSize > 0x10000 )
+   if ( ( ( uint32_t )ptr & 0xffff ) + TotalBufferSize > 0x10000 )
       {
-      ptr = ( char * )( ( ( unsigned long )ptr & 0xff0000 ) + 0x10000 );
+      ptr = ( uint8_t * )( ( ( uint32_t )ptr & 0xff0000 ) + 0x10000 );
       }
 
    MV_MixBuffer[ MV_NumberOfBuffers ] = ptr;
@@ -3276,7 +3295,7 @@ int MV_Shutdown
    switch( MV_SoundCard )
       {
       case UltraSound :
-         GUSWAVE_Shutdown();
+         // GUSWAVE_Shutdown();
          break;
 
       case SoundBlaster :
@@ -3286,11 +3305,11 @@ int MV_Shutdown
 
       case ProAudioSpectrum :
       case SoundMan16 :
-         PAS_Shutdown();
+         // PAS_Shutdown();
          break;
 
       case SoundScape :
-         SOUNDSCAPE_Shutdown();
+         // SOUNDSCAPE_Shutdown();
          break;
 
       #ifndef SOUNDSOURCE_OFF
@@ -3309,8 +3328,8 @@ int MV_Shutdown
    MV_Voices      = NULL;
    MV_TotalMemory = 0;
 
-   LL_Reset( &VoiceList, next, prev );
-   LL_Reset( &VoicePool, next, prev );
+   LL_Reset( (VoiceNode*)&VoiceList, next, prev );
+   LL_Reset( (VoiceNode*)&VoicePool, next, prev );
 
    MV_MaxVoices = 1;
 

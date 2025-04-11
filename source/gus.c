@@ -35,8 +35,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <fcntl.h>
 #include <string.h>
 #include <stdlib.h>
-#include "usrhooks.h"
-#include "interrup.h"
+// #include "usrhooks.h"
+// #include "interrup.h"
 #include "newgf1.h"
 #include "gusmidi.h"
 #include "guswave.h"
@@ -147,10 +147,10 @@ void *D32DosMemAlloc
    union REGS r;
 
    // DPMI allocate DOS memory
-   r.x.eax = 0x0100;
+   r.d.eax = 0x0100;
 
    // Number of paragraphs requested
-   r.x.ebx = ( size + 15 ) >> 4;
+   r.d.ebx = ( size + 15 ) >> 4;
    int386( 0x31, &r, &r );
    if ( r.x.cflag )
       {
@@ -158,7 +158,7 @@ void *D32DosMemAlloc
       return( NULL );
       }
 
-   return( ( void * )( ( r.x.eax & 0xFFFF ) << 4 ) );
+   return( ( void * )( ( r.d.eax & 0xFFFF ) << 4 ) );
    }
 
 
@@ -270,10 +270,10 @@ void GUSWAVE_Shutdown
       // free memory
       for ( i = 0; i < VOICES; i++ )
          {
-         if ( GUSWAVE_Voices[ i ].mem != NULL )
+         if ( GUSWAVE_Voices[ i ].mem != 0 )
             {
             gf1_free( GUSWAVE_Voices[ i ].mem );
-            GUSWAVE_Voices[ i ].mem = NULL;
+            GUSWAVE_Voices[ i ].mem = 0;
             }
          }
 

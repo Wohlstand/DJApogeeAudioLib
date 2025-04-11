@@ -42,6 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "al_midi.h"
 #include "_al_midi.h"
 #include "ll_man.h"
+#include "djconfig.h"
 
 #define TRUE  ( 1 == 1 )
 #define FALSE ( !TRUE )
@@ -370,7 +371,7 @@ static void AL_SetVoiceVolume
          // amplitude
          t2  = ( unsigned )VoiceLevel[ slot ][ port ];
          t2 *= ( velocity + 0x80 );
-         t2  = ( Channel[ channel ].Volume * t1 ) >> 15;
+         t2  = ( Channel[ channel ].Volume * t2 ) >> 15;
 
          volume  = t2 ^ 63;
          volume |= ( unsigned )VoiceKsl[ slot ][ port ];
@@ -412,7 +413,7 @@ static void AL_SetVoiceVolume
          // amplitude
          t2  = ( unsigned )VoiceLevel[ slot ][ port ];
          t2 *= ( velocity + 0x80 );
-         t2  = ( Channel[ channel ].Volume * t1 ) >> 15;
+         t2  = ( Channel[ channel ].Volume * t2 ) >> 15;
 
          slot = slotVoice[ voc ][ 0 ];
 

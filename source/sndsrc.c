@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
    (c) Copyright 1994 James R. Dose.  All Rights Reserved.
 **********************************************************************/
 
+#include <stdint.h>
 #define STEREO      1
 #define SIXTEEN_BIT 2
 
@@ -53,16 +54,16 @@ static int SS_Installed = FALSE;
 static int SS_Port = SS_DefaultPort;
 static int SS_OffCommand = 0xc;
 
-static char   *SS_BufferStart;
-static char   *SS_BufferEnd;
-static char   *SS_CurrentBuffer;
+static uint8_t *SS_BufferStart;
+static uint8_t *SS_BufferEnd;
+static uint8_t *SS_CurrentBuffer;
 static int     SS_BufferNum = 0;
 static int     SS_NumBuffers = 0;
 static int     SS_TotalBufferSize = 0;
 static int     SS_TransferLength  = 0;
 static int     SS_CurrentLength   = 0;
 
-static char   *SS_SoundPtr;
+static uint8_t *SS_SoundPtr;
 volatile int   SS_SoundPlaying;
 
 static task   *SS_Timer;
@@ -262,7 +263,7 @@ static void SS_LockEnd
 
 int SS_BeginBufferedPlayback
    (
-   char *BufferStart,
+   uint8_t *BufferStart,
    int   BufferSize,
    int   NumDivisions,
    void ( *CallBackFunc )( void )
@@ -404,7 +405,7 @@ int SS_TestSoundSource
 
    present = FALSE;
 
-   timer = TS_ScheduleTask( SS_TestTimer, 140, 1, &ticks );
+   timer = TS_ScheduleTask( SS_TestTimer, 140, 1, (void*)&ticks );
    TS_Dispatch();
 
    outp( port + 2, 4 );

@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 **********************************************************************/
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <time.h>
 #include <dos.h>
 #include <string.h>
@@ -43,6 +44,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "_midi.h"
 #include "midi.h"
 #include "debugio.h"
+#include "djconfig.h"
 
 extern int MUSIC_SoundDevice;
 
@@ -551,7 +553,7 @@ static void test
    _MIDI_ServiceRoutine( Task );
    }
 */
-static void _MIDI_ServiceRoutine
+/*static*/ void _MIDI_ServiceRoutine
    (
    task *Task
    )
@@ -1250,11 +1252,13 @@ int MIDI_PlaySong
 
    if ( _MIDI_Funcs == NULL )
       {
+      printf("-- MIDI ERROR: Null Midi Module\n");
       return( MIDI_NullMidiModule );
       }
 
    if ( *( unsigned long * )song != MIDI_HEADER_SIGNATURE )
       {
+      printf("-- MIDI ERROR: Invalid MIDI header\n");
       return( MIDI_InvalidMidiFile );
       }
 
@@ -1273,6 +1277,7 @@ int MIDI_PlaySong
 
    if ( format > MAX_FORMAT )
       {
+      printf("-- MIDI ERROR: Unknown format\n");
       return( MIDI_UnknownMidiFormat );
       }
 
@@ -1280,13 +1285,15 @@ int MIDI_PlaySong
 
    if ( _MIDI_NumTracks == 0 )
       {
+      printf("-- MIDI ERROR: No tracks\n");
       return( MIDI_NoTracks );
       }
 
    _MIDI_TrackMemSize = _MIDI_NumTracks  * sizeof( track );
-   status = USRHOOKS_GetMem( &_MIDI_TrackPtr, _MIDI_TrackMemSize );
+   status = USRHOOKS_GetMem( (void**)&_MIDI_TrackPtr, _MIDI_TrackMemSize );
    if ( status != USRHOOKS_Ok )
       {
+      printf("-- MIDI ERROR: No memory\n");
       return( MIDI_NoMemory );
       }
 
@@ -1299,6 +1306,7 @@ int MIDI_PlaySong
       _MIDI_TrackMemSize = 0;
       _MIDI_NumTracks    = 0;
 //      MIDI_SetErrorCode( MIDI_DPMI_Error );
+      printf("-- MIDI ERROR: DPMI failed\n");
       return( MIDI_Error );
       }
 
@@ -1315,6 +1323,7 @@ int MIDI_PlaySong
          _MIDI_TrackPtr = NULL;
          _MIDI_TrackMemSize = 0;
 
+         printf("-- MIDI ERROR: Invalid track\n");
          return( MIDI_InvalidTrack );
          }
 

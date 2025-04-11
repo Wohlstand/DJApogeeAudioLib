@@ -48,7 +48,7 @@ void  TimerFunc( task *Task );
    Function: main
 ---------------------------------------------------------------------*/
 
-void main
+int main
    (
    void
    )
@@ -130,6 +130,7 @@ void main
 
    // Shutdown TaskMan.  Failure to do so could be fatal!!!
    TS_Shutdown();
+   return 0;
    }
 
 /*---------------------------------------------------------------------

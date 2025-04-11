@@ -105,7 +105,7 @@ typedef unsigned int		UINT;
 typedef signed long 		LONG;
 
 #ifndef FAR
-#define FAR                     __far
+#define FAR                     /*__far*/
 #endif
 
 #ifndef HUGE
@@ -113,7 +113,7 @@ typedef signed long 		LONG;
 #endif
 
 #ifndef PASCAL
-#define PASCAL                  __pascal
+#define PASCAL                  /*__pascal*/
 #endif
 
 typedef void FAR*               LPVOID;

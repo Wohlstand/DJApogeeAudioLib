@@ -31,10 +31,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <dos.h>
 #include <stdlib.h>
 #include <conio.h>
+#include "djconfig.h"
 #include "a_dpmi.h"
 #include "task_man.h"
 #include "interrup.h"
-#include "al_midi.h"
+// #include "al_midi.h"
 #include "adlibfx.h"
 
 #define TRUE  ( 1 == 1 )
@@ -373,7 +374,7 @@ int ADLIBFX_Play
    ADLIBFX_LengthLeft  = sound->length;
    ADLIBFX_Priority    = priority;
    ADLIBFX_Sound       = sound;
-   ADLIBFX_SoundPtr    = &sound->data;
+   ADLIBFX_SoundPtr    = (char*)&sound->data;
    ADLIBFX_CallBackVal = callbackval;
 
    ADLIBFX_Block = ( ( sound->block & 7 ) << 2 ) | 0x20;

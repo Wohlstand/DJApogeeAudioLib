@@ -29,7 +29,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 **********************************************************************/
 
 #include <dos.h>
-#include <string.h>
+#include <sys/nearptr.h>
+#include <dpmi.h>
+#include "djconfig.h"
 #include "a_dpmi.h"
 
 #define TRUE  ( 1 == 1 )
@@ -53,7 +55,7 @@ unsigned long DPMI_GetRealModeVector
    {
    unsigned long vector;
 
-   Regs.x.eax = 0x0200;
+   Regs.d.eax = 0x0200;
    Regs.h.bl  = num;
    int386( 0x31, &Regs, &Regs );
 
@@ -78,7 +80,7 @@ void DPMI_SetRealModeVector
    )
 
    {
-   Regs.x.eax = 0x0201;
+   Regs.d.eax = 0x0201;
    Regs.h.bl  = num;
    Regs.w.dx = vector & 0xffff;
    Regs.w.cx = ( vector >> 16 ) & 0xffff;
@@ -106,7 +108,7 @@ int DPMI_CallRealModeFunction
    Regs.w.cx = 0;
 
    SegRegs.es = FP_SEG( callregs );
-   Regs.x.edi = FP_OFF( callregs );
+   Regs.d.edi = FP_OFF( callregs );
 
    // Call Real-mode procedure with Far Return Frame
    int386x( 0x31, &Regs, &Regs, &SegRegs );
@@ -118,6 +120,27 @@ int DPMI_CallRealModeFunction
 
    return( DPMI_Ok );
    }
+
+int  DPMI_GetDOSMemory( void **ptr, int *descriptor, unsigned length )
+{
+    int32_t  segment;
+    int32_t  paragraphs;
+
+    paragraphs = (length + 15) / 16;
+
+    segment = __dpmi_allocate_dos_memory(paragraphs, descriptor);
+    if(segment < 0)
+        return DPMI_Error;
+
+    *ptr = (uint8_t *)((segment << 4) + __djgpp_conventional_base);
+
+    return DPMI_Ok;
+}
+
+int  DPMI_FreeDOSMemory( int descriptor )
+{
+    return __dpmi_free_dos_memory(descriptor);
+}
 
 
 /*---------------------------------------------------------------------
@@ -134,31 +157,47 @@ int DPMI_LockMemory
    )
 
    {
-   unsigned linear;
+   int ret;
+   unsigned long baseaddr;
+   __dpmi_meminfo mem;
 
-   // Thanks to DOS/4GW's zero-based flat memory model, converting
-   // a pointer of any type to a linear address is trivial.
-
-   linear = (unsigned) address;
-
-   // DPMI Lock Linear Region
-   Regs.w.ax = 0x600;
-
-   // Linear address in BX:CX
-   Regs.w.bx = (linear >> 16);
-   Regs.w.cx = (linear & 0xFFFF);
-
-   // Length in SI:DI
-   Regs.w.si = (length >> 16);
-   Regs.w.di = (length & 0xFFFF);
-
-   int386 (0x31, &Regs, &Regs);
-
-   // Return 0 if can't lock
-   if ( Regs.w.cflag )
-      {
+   if (__dpmi_get_segment_base_address(_my_ds(), &baseaddr) == -1)
       return( DPMI_Error );
-      }
+
+   mem.handle = 0;
+   mem.address = baseaddr + (intptr_t)address;
+   mem.size = length;
+
+   ret = __dpmi_lock_linear_region(&mem);
+
+   if ( ret == -1 )
+      return( DPMI_Error );
+
+   // unsigned linear;
+
+   // // Thanks to DOS/4GW's zero-based flat memory model, converting
+   // // a pointer of any type to a linear address is trivial.
+
+   // linear = (unsigned) address;
+
+   // // DPMI Lock Linear Region
+   // Regs.w.ax = 0x600;
+
+   // // Linear address in BX:CX
+   // Regs.w.bx = (linear >> 16);
+   // Regs.w.cx = (linear & 0xFFFF);
+
+   // // Length in SI:DI
+   // Regs.w.si = (length >> 16);
+   // Regs.w.di = (length & 0xFFFF);
+
+   // int386 (0x31, &Regs, &Regs);
+
+   // // Return 0 if can't lock
+   // if ( Regs.w.cflag )
+   //    {
+   //    return( DPMI_Error );
+   //    }
 
    return ( DPMI_Ok );
    }
@@ -199,31 +238,45 @@ int DPMI_UnlockMemory
    )
 
    {
-   unsigned linear;
+   int ret;
+   unsigned long baseaddr;
+   __dpmi_meminfo mem;
 
-   // Thanks to DOS/4GW's zero-based flat memory model, converting
-   // a pointer of any type to a linear address is trivial.
-
-   linear = (unsigned) address;
-
-   // DPMI Unlock Linear Region
-   Regs.w.ax = 0x601;
-
-   // Linear address in BX:CX
-   Regs.w.bx = (linear >> 16);
-   Regs.w.cx = (linear & 0xFFFF);
-
-   // Length in SI:DI
-   Regs.w.si = (length >> 16);
-   Regs.w.di = (length & 0xFFFF);
-
-   int386 (0x31, &Regs, &Regs);
-
-   // Return 0 if can't unlock
-   if ( Regs.w.cflag )
-      {
+   if (__dpmi_get_segment_base_address(_my_ds(), &baseaddr) == -1)
       return( DPMI_Error );
-      }
+
+   mem.handle = 0;
+   mem.address = baseaddr + (intptr_t)address;
+   mem.size = length;
+   ret = __dpmi_unlock_linear_region(&mem);
+
+   if ( ret == -1 )
+      return( DPMI_Error );
+   // unsigned linear;
+
+   // // Thanks to DOS/4GW's zero-based flat memory model, converting
+   // // a pointer of any type to a linear address is trivial.
+
+   // linear = (unsigned) address;
+
+   // // DPMI Unlock Linear Region
+   // Regs.w.ax = 0x601;
+
+   // // Linear address in BX:CX
+   // Regs.w.bx = (linear >> 16);
+   // Regs.w.cx = (linear & 0xFFFF);
+
+   // // Length in SI:DI
+   // Regs.w.si = (length >> 16);
+   // Regs.w.di = (length & 0xFFFF);
+
+   // int386 (0x31, &Regs, &Regs);
+
+   // // Return 0 if can't unlock
+   // if ( Regs.w.cflag )
+   //    {
+   //    return( DPMI_Error );
+   //    }
 
    return ( DPMI_Ok );
    }

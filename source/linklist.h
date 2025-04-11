@@ -83,7 +83,7 @@ extern "C" {
    {                                                                    \
    type *hoya;                                                          \
                                                                         \
-   hoya = (rootnode)->next;                                               \
+   hoya = (rootnode)->next;                                             \
    while((hoya != (rootnode)) && ((insertnode)->sortparm > hoya->sortparm)) \
       {                                                                 \
       hoya = hoya->next;                                                \

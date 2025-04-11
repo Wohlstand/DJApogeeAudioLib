@@ -31,6 +31,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef __IRQ_H
 #define __IRQ_H
 
+#include "djconfig.h"
+
+#define IRQ_NO_SET_VECTOR
+
 enum IRQ_ERRORS
    {
    IRQ_Warning = -2,
@@ -40,15 +44,17 @@ enum IRQ_ERRORS
 
 #define VALID_IRQ( irq )  ( ( ( irq ) >= 0 ) && ( ( irq ) <= 15 ) )
 
+#ifndef IRQ_NO_SET_VECTOR
 int IRQ_SetVector
    (
    int vector,
    void ( __interrupt *function )( void )
    );
+
 int IRQ_RestoreVector
    (
    int vector
    );
-
+#endif
 
 #endif

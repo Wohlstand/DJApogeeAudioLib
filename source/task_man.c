@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //#define USESTACK
 #define LOCKMEMORY
 #define NOINTS
-#define USE_USRHOOKS
+// #define USE_USRHOOKS
 
 #include <stdlib.h>
 #include <dos.h>
@@ -43,9 +43,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "interrup.h"
 #include "linklist.h"
 #include "task_man.h"
+#include "djconfig.h"
 
 #ifdef USESTACK
-#include "dpmi.h"
+#include "a_dpmi.h"
 #endif
 #ifdef LOCKMEMORY
 #include "a_dpmi.h"
@@ -85,7 +86,11 @@ static unsigned long  oldStackPointer;
 static task HeadTask;
 static task *TaskList = &HeadTask;
 
-static void ( __interrupt __far *OldInt8 )( void );
+#if defined __DJGPP__ || defined __CCDL__
+static _go32_dpmi_seginfo OldInt8, NewInt8;
+#elif defined __WATCOMC__
+static void (_interrupt _far *OldInt8)(void);
+#endif
 
 static volatile long TaskServiceRate  = 0x10000L;
 static volatile long TaskServiceCount = 0;
@@ -107,11 +112,12 @@ static void TS_SetClockSpeed( long speed );
 static long TS_SetTimer( long TickBase );
 static void TS_SetTimerToMaxTaskRate( void );
 static void __interrupt __far TS_ServiceSchedule( void );
-static void __interrupt __far TS_ServiceScheduleIntEnabled( void );
+// static void __interrupt __far TS_ServiceScheduleIntEnabled( void );
 static void TS_AddTask( task *ptr );
 static int  TS_Startup( void );
 static void RestoreRealTimeClock( void );
 
+#ifdef USESTACK
 // These declarations are necessary to use the inline assembly pragmas.
 
 extern void GetStack(unsigned short *selptr,unsigned long *stackptr);
@@ -133,6 +139,7 @@ extern void SetStack(unsigned short selector,unsigned long stackptr);
 	"mov  esp,edx"			\
 	parm [ax] [edx]		\
 	modify [eax edx];
+#endif
 
 
 /**********************************************************************
@@ -493,6 +500,8 @@ static void deallocateTimerStack
    Sets up the task service routine.
 ---------------------------------------------------------------------*/
 
+#define TIMERINT 8
+
 static int TS_Startup
    (
    void
@@ -544,12 +553,13 @@ static int TS_Startup
       TS_TimesInInterrupt = 0;
 #endif
 
-      OldInt8 = _dos_getvect( 0x08 );
-      #ifdef NOINTS
-         _dos_setvect( 0x08, TS_ServiceSchedule );
-      #else
-         _dos_setvect( 0x08, TS_ServiceScheduleIntEnabled );
-      #endif
+    replaceInterrupt(OldInt8, NewInt8, TIMERINT, TS_ServiceSchedule);
+      // OldInt8 = _dos_getvect( 0x08 );
+      // #ifdef NOINTS
+      //    _dos_setvect( 0x08, TS_ServiceSchedule );
+      // #else
+      //    _dos_setvect( 0x08, TS_ServiceScheduleIntEnabled );
+      // #endif
 
       TS_Installed = TRUE;
       }
@@ -576,7 +586,8 @@ void TS_Shutdown
 
       TS_SetClockSpeed( 0 );
 
-      _dos_setvect( 0x08, OldInt8 );
+      restoreInterrupt(TIMERINT, OldInt8, NewInt8);
+      // _dos_setvect( 0x08, OldInt8 );
 
 #ifdef USESTACK
 
@@ -614,10 +625,9 @@ task *TS_ScheduleTask
 
    {
    task *ptr;
-
-#ifdef USE_USRHOOKS
    int   status;
 
+#ifdef USE_USRHOOKS
    ptr = NULL;
 
    status = USRHOOKS_GetMem( &ptr, sizeof( task ) );
