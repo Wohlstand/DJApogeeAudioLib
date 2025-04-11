@@ -785,6 +785,14 @@ playbackstatus MV_GetNextVOCBlock
                voice->bits  = 16;
                done         = TRUE;
                }
+            else if ( ( BitsPerSample == 16 ) && ( Channels == 2 ) &&
+               ( Format == VOC_16BIT ) ) // FIXME: Implement true stereo instead of this workaround
+               {
+               ptr         += 24;
+               blocklength -= 24;
+               voice->bits  = 16;
+               done         = TRUE;
+               }
             else
                {
                ptr += blocklength;
