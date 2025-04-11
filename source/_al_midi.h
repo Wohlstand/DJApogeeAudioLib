@@ -59,6 +59,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define MIDI_VOLUME          7
 #define MIDI_PAN             10
+#define MIDI_EXPRESSION      11
 #define MIDI_DETUNE          94
 #define MIDI_ALL_NOTES_OFF   0x7B
 #define MIDI_RESET_ALL_CONTROLLERS 0x79
@@ -134,16 +135,18 @@ typedef struct
    VOICELIST Voices;
    int       Timbre;
    int       Pitchbend;
-   int       KeyOffset;
-   unsigned  KeyDetune;
+   // int       KeyOffset;
+   // unsigned  KeyDetune;
    unsigned  Volume;
+   unsigned  Expression;
    unsigned  EffectiveVolume;
    int       Pan;
    int       Detune;
    unsigned  RPN;
-   short     PitchBendRange;
    short     PitchBendSemiTones;
    short     PitchBendHundreds;
+   // short     PitchBendRange;
+   float     PitchBendMultiplier;
    } CHANNEL;
 
 typedef struct

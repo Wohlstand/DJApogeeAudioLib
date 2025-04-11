@@ -146,7 +146,6 @@ static int AL_SendStereo = FALSE;
 static int AL_OPL3       = FALSE;
 static int AL_MaxMidiChannel = 16;
 
-
 /**********************************************************************
 
    Memory locked functions:
@@ -335,12 +334,14 @@ static void AL_SetVoiceVolume
    int slot;
    int port;
    int voc;
+   unsigned midiVolume;
    unsigned long t1;
    unsigned long t2;
    unsigned long volume;
    TIMBRE *timbre;
 
    channel = Voice[ voice ].channel;
+   midiVolume = (Channel[ channel ].Volume * Channel[ channel ].Expression  / 127);
 
    timbre = &ADLIB_TimbreBank[ Voice[ voice ].timbre ];
 
@@ -354,7 +355,7 @@ static void AL_SetVoiceVolume
    // amplitude
    t1  = ( unsigned )VoiceLevel[ slot ][ port ];
    t1 *= ( velocity + 0x80 );
-   t1  = ( Channel[ channel ].Volume * t1 ) >> 15;
+   t1  = ( midiVolume * t1 ) >> 15;
 
    if ( !AL_SendStereo )
       {
@@ -371,7 +372,7 @@ static void AL_SetVoiceVolume
          // amplitude
          t2  = ( unsigned )VoiceLevel[ slot ][ port ];
          t2 *= ( velocity + 0x80 );
-         t2  = ( Channel[ channel ].Volume * t2 ) >> 15;
+         t2  = ( midiVolume * t2 ) >> 15;
 
          volume  = t2 ^ 63;
          volume |= ( unsigned )VoiceKsl[ slot ][ port ];
@@ -413,7 +414,7 @@ static void AL_SetVoiceVolume
          // amplitude
          t2  = ( unsigned )VoiceLevel[ slot ][ port ];
          t2 *= ( velocity + 0x80 );
-         t2  = ( Channel[ channel ].Volume * t2 ) >> 15;
+         t2  = ( midiVolume * t2 ) >> 15;
 
          slot = slotVoice[ voc ][ 0 ];
 
@@ -516,6 +517,8 @@ static void AL_SetVoicePitch
 
    {
    int note;
+   int toneI;
+   int bend;
    int channel;
    int patch;
    int detune;
@@ -524,6 +527,8 @@ static void AL_SetVoicePitch
    int pitch;
    int port;
    int voc;
+   float bendDec;
+   float toneF;
 
    port = Voice[ voice ].port;
    voc  = ( voice >= NUM_VOICES ) ? voice - NUM_VOICES : voice;
@@ -540,7 +545,16 @@ static void AL_SetVoicePitch
       note  = Voice[ voice ].key + ADLIB_TimbreBank[ patch ].Transpose;
       }
 
-   note += Channel[ channel ].KeyOffset - 12;
+   toneF = note + (Channel[ channel ].Pitchbend * Channel[ channel ].PitchBendMultiplier);
+   toneI = (int)toneF;
+   bendDec = toneF - (int)toneF;
+
+   bend = (int)(bendDec * 32) + 32;
+   toneI += bend / 32;
+   toneI -= 1;
+
+   note = toneI - 12;
+   // note += Channel[ channel ].KeyOffset - 12;
    if ( note > MAX_NOTE )
       {
       note = MAX_NOTE;
@@ -550,7 +564,8 @@ static void AL_SetVoicePitch
       note = 0;
       }
 
-   detune = Channel[ channel ].KeyDetune;
+   detune = bend % FINETUNE_RANGE;
+   // detune = Channel[ channel ].KeyDetune;
 
    ScaleNote = NoteMod12[ note ];
    Octave    = NoteDiv12[ note ];
@@ -627,6 +642,28 @@ static void AL_SetChannelVolume
    }
 
 
+static void AL_SetChannelExpression
+   (
+   int channel,
+   int expression
+   )
+
+   {
+   VOICE *voice;
+
+   expression = max( 0, expression );
+   expression = min( expression, AL_MaxVolume );
+   Channel[ channel ].Expression = expression;
+
+   voice = Channel[ channel ].Voices.start;
+   while( voice != NULL )
+      {
+      AL_SetVoiceVolume( voice->num );
+      voice = voice->next;
+      }
+   }
+
+
 /*---------------------------------------------------------------------
    Function: AL_SetChannelPan
 
@@ -671,11 +708,10 @@ static void AL_SetChannelDetune
    Sets all voice info to the default state.
 ---------------------------------------------------------------------*/
 
-static void AL_ResetVoices
+static void AL_ResetVoicesPart
    (
    void
    )
-
    {
    int index;
    int numvoices;
@@ -702,6 +738,29 @@ static void AL_ResetVoices
          LL_AddToTail( VOICE, &Voice_Pool, &Voice[ index ] );
          }
       }
+   }
+
+
+static void AL_UpdateBendMult
+   (
+   int channel
+   )
+   {
+   int cent = Channel[ channel ].PitchBendSemiTones * 128 + Channel[ channel ].PitchBendHundreds;
+   Channel[ channel ].PitchBendMultiplier = cent * (1.0f / (128 * 8192));
+   }
+
+
+static void AL_ResetVoices
+   (
+   void
+   )
+
+   {
+   int index;
+
+   AL_ResetVoicesPart();
+
 
    for( index = 0; index < NUM_CHANNELS; index++ )
       {
@@ -709,12 +768,16 @@ static void AL_ResetVoices
       Channel[ index ].Voices.end      = NULL;
       Channel[ index ].Timbre          = 0;
       Channel[ index ].Pitchbend       = 0;
-      Channel[ index ].KeyOffset       = 0;
-      Channel[ index ].KeyDetune       = 0;
+      // Channel[ index ].KeyOffset       = 0;
+      // Channel[ index ].KeyDetune       = 0;
       Channel[ index ].Volume          = AL_DefaultChannelVolume;
+      Channel[ index ].Expression      = AL_DefaultChannelExpression;
       Channel[ index ].Pan             = 64;
       Channel[ index ].RPN             = 0;
-      Channel[ index ].PitchBendRange     = AL_DefaultPitchBendRange;
+      Channel[ index ].PitchBendSemiTones = 0;
+      Channel[ index ].PitchBendHundreds = 2;
+      AL_UpdateBendMult( index );
+      // Channel[ index ].PitchBendRange = AL_DefaultPitchBendRange;
       Channel[ index ].PitchBendSemiTones = AL_DefaultPitchBendRange / 100;
       Channel[ index ].PitchBendHundreds  = AL_DefaultPitchBendRange % 100;
       }
@@ -1120,6 +1183,10 @@ void AL_ControlChange
          AL_SetChannelPan( channel, data );
          break;
 
+      case MIDI_EXPRESSION:
+         AL_SetChannelExpression( channel, data );
+         break;
+
       case MIDI_DETUNE :
          AL_SetChannelDetune( channel, data );
          break;
@@ -1129,9 +1196,9 @@ void AL_ControlChange
          break;
 
       case MIDI_RESET_ALL_CONTROLLERS :
-         AL_ResetVoices();
-         AL_SetChannelVolume( channel, AL_DefaultChannelVolume );
-         AL_SetChannelPan( channel, 64 );
+         AL_ResetVoicesPart();
+         // AL_SetChannelVolume( channel, AL_DefaultChannelVolume );
+         // AL_SetChannelPan( channel, 64 );
          AL_SetChannelDetune( channel, 0 );
          break;
 
@@ -1149,9 +1216,10 @@ void AL_ControlChange
          if ( Channel[ channel ].RPN == MIDI_PITCHBEND_RPN )
             {
             Channel[ channel ].PitchBendSemiTones = data;
-            Channel[ channel ].PitchBendRange     =
-               Channel[ channel ].PitchBendSemiTones * 100 +
-               Channel[ channel ].PitchBendHundreds;
+            AL_UpdateBendMult ( channel );
+            // Channel[ channel ].PitchBendRange     =
+            //    Channel[ channel ].PitchBendSemiTones * 100 +
+            //    Channel[ channel ].PitchBendHundreds;
             }
          break;
 
@@ -1159,9 +1227,10 @@ void AL_ControlChange
          if ( Channel[ channel ].RPN == MIDI_PITCHBEND_RPN )
             {
             Channel[ channel ].PitchBendHundreds = data;
-            Channel[ channel ].PitchBendRange    =
-               Channel[ channel ].PitchBendSemiTones * 100 +
-               Channel[ channel ].PitchBendHundreds;
+            AL_UpdateBendMult ( channel );
+            // Channel[ channel ].PitchBendRange    =
+            //    Channel[ channel ].PitchBendSemiTones * 100 +
+            //    Channel[ channel ].PitchBendHundreds;
             }
          break;
       }
@@ -1215,16 +1284,17 @@ void AL_SetPitchBend
       return;
       }
 
-   pitchbend = lsb + ( msb << 8 );
+   pitchbend = lsb + ( msb << 7 ) - 8192;
    Channel[ channel ].Pitchbend = pitchbend;
 
-   TotalBend  = pitchbend * Channel[ channel ].PitchBendRange;
-   TotalBend /= ( PITCHBEND_CENTER / FINETUNE_RANGE );
+   // TotalBend  = pitchbend * Channel[ channel ].PitchBendRange;
+   // TotalBend = pitchbend * Channel[ channel ].PitchBendMultiplier * 200;
+   // TotalBend /= ( PITCHBEND_CENTER / FINETUNE_RANGE );
 
-   Channel[ channel ].KeyOffset  = ( int )( TotalBend / FINETUNE_RANGE );
-   Channel[ channel ].KeyOffset -= Channel[ channel ].PitchBendSemiTones;
+   // Channel[ channel ].KeyOffset  = ( int )( TotalBend / FINETUNE_RANGE );
+   // Channel[ channel ].KeyOffset -= Channel[ channel ].PitchBendSemiTones;
 
-   Channel[ channel ].KeyDetune = ( unsigned )( TotalBend % FINETUNE_RANGE );
+   // Channel[ channel ].KeyDetune = ( unsigned )( TotalBend % FINETUNE_RANGE );
 
    voice = Channel[ channel ].Voices.start;
    while( voice != NULL )

@@ -28,7 +28,9 @@ enum AL_Errors
    };
 
 #define AL_MaxVolume             127
-#define AL_DefaultChannelVolume  90
+// #define AL_DefaultChannelVolume  90
+#define AL_DefaultChannelVolume  100
+#define AL_DefaultChannelExpression  127
 //#define AL_DefaultPitchBendRange 2
 #define AL_DefaultPitchBendRange 200
 
