@@ -50,48 +50,40 @@ int32_t MV_Shift        __attribute__ ((externally_visible)) = 0;
 
 void MV_16BitReverb_Wrapper( uint8_t *src, uint8_t *dest, VOLUME16 *volume, int count )
 {
-    MV_Start = src;
+    MV_Src = src;
     MV_Dest = dest;
     MV_Volume = volume;
-    MV_Length = count;
-
-    printf("MV_16BitReverb_Wrapper!\n");
+    MV_Count = count;
 
     MV_16BitReverb();
 }
 
 void MV_8BitReverb_Wrapper(uint8_t *src, uint8_t *dest, VOLUME16 *volume, int count )
 {
-    MV_Start = src;
+    MV_Src = src;
     MV_Dest = dest;
     MV_Volume = volume;
     MV_Count = count;
-
-    printf("MV_8BitReverb_Wrapper!\n");
 
     MV_8BitReverb();
 }
 
 void MV_16BitReverbFast_Wrapper( uint8_t *src, uint8_t *dest, int count, int shift )
 {
-    MV_Start = src;
+    MV_Src = src;
     MV_Dest = dest;
     MV_Count = count;
     MV_Shift = shift;
-
-    printf("MV_16BitReverbFast_Wrapper!\n");
 
     MV_16BitReverbFast();
 }
 
 void MV_8BitReverbFast_Wrapper(uint8_t *src, uint8_t *dest, int count, int shift )
 {
-    MV_Start = src;
+    MV_Src = src;
     MV_Dest = dest;
     MV_Count = count;
     MV_Shift = shift;
-
-    printf("MV_8BitReverbFast_Wrapper!\n");
 
     MV_8BitReverbFast();
 }

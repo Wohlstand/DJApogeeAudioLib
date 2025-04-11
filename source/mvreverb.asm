@@ -61,7 +61,6 @@ _MV_16BitReverb:
         mov     edx, [_MV_Dest]
         lea     edi, [edx - 2]
 
-        mov     ebx, [_MV_Volume]
         mov     ecx, [_MV_Count]
 
         ALIGN 4
@@ -72,6 +71,7 @@ rev16loop:
         movzx   edx, ah
         sub     ah, ah
 
+        mov     ebx, [_MV_Volume]
         movsx   eax, byte [2*eax+ebx+1]     ; volume translate low byte of sample
         xor     edx, 80h
 
@@ -107,7 +107,6 @@ _MV_8BitReverb:
 
         xor     eax, eax
 
-        mov     ebx, [_MV_Volume]
         mov     ecx, [_MV_Count]
 
         ALIGN 4
@@ -116,6 +115,7 @@ rev8loop:
         mov     al, byte [esi]              ; get sample
         inc     edi
 
+        mov     ebx, [_MV_Volume]
 ;        movsx   eax, byte [2*eax+ebx]       ; volume translate sample
         mov     al, byte [2*eax+ebx]        ; volume translate sample
         inc     esi
