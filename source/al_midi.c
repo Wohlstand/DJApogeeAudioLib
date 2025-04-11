@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stddef.h>
 #include <stdlib.h>
 //#include <math.h>
-#include "dpmi.h"
+#include "a_dpmi.h"
 #include "interrup.h"
 #include "sndcards.h"
 #include "blaster.h"

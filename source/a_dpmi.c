@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <dos.h>
 #include <string.h>
-#include "dpmi.h"
+#include "a_dpmi.h"
 
 #define TRUE  ( 1 == 1 )
 #define FALSE ( !TRUE )

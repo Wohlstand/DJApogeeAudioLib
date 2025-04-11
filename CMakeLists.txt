@@ -27,7 +27,7 @@ add_library(ass_audio STATIC
     source/debugio.c
     source/debugio.h
     source/dma.c        source/dma.h
-    source/dpmi.c       source/dpmi.h
+    source/a_dpmi.c     source/a_dpmi.h
     source/fx_man.c     include/fx_man.h
     source/gmtemp.c
     source/gmtimbre.c

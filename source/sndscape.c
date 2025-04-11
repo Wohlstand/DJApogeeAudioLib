@@ -36,7 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <ctype.h>
 #include <time.h>
 #include "interrup.h"
-#include "dpmi.h"
+#include "a_dpmi.h"
 #include "dma.h"
 #include "irq.h"
 #include "sndscape.h"

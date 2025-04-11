@@ -28,8 +28,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
    (c) Copyright 1994 James R. Dose.  All Rights Reserved.
 **********************************************************************/
 
-#ifndef __DPMI_H
-#define __DPMI_H
+#ifndef __A_DPMI_H
+#define __A_DPMI_H
 
 enum DPMI_Errors
    {

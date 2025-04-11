@@ -30,10 +30,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 **********************************************************************/
 
 #include <stdlib.h>
-#include "dpmi.h"
+#include "a_dpmi.h"
 #include "usrhooks.h"
 #include "interrup.h"
-#include "dpmi.h"
+#include "a_dpmi.h"
 #include "ll_man.h"
 #include "sndcards.h"
 #include "blaster.h"

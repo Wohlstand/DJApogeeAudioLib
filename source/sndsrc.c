@@ -39,7 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdlib.h>
 #include <dos.h>
 #include <conio.h>
-#include "dpmi.h"
+#include "a_dpmi.h"
 #include "task_man.h"
 #include "sndcards.h"
 #include "user.h"
