@@ -56,12 +56,15 @@ align 4
 
 global _MV_16BitReverb
 _MV_16BitReverb:
+        pushad
 
-        mov     esi, [_MV_Src]
+        mov     eax, [_MV_Src]
         mov     edx, [_MV_Dest]
-        lea     edi, [edx - 2]
-
         mov     ecx, [_MV_Count]
+        mov     ebx, [_MV_Volume]
+
+        mov     esi, eax
+        lea     edi, [edx - 2]
 
         ALIGN 4
 rev16loop:
@@ -71,7 +74,6 @@ rev16loop:
         movzx   edx, ah
         sub     ah, ah
 
-        mov     ebx, [_MV_Volume]
         movsx   eax, byte [2*eax+ebx+1]     ; volume translate low byte of sample
         xor     edx, 80h
 
@@ -84,6 +86,7 @@ rev16loop:
         mov     [edi], ax                       ; write new sample to destination
         jnz     rev16loop                       ; loop
 
+        popad
         ret
 
 
@@ -100,14 +103,17 @@ rev16loop:
 
 global _MV_8BitReverb
 _MV_8BitReverb:
+        pushad
 
-        mov     esi, [_MV_Src]
+        mov     eax, [_MV_Src]
         mov     edx, [_MV_Dest]
+        mov     ebx, [_MV_Volume]
+        mov     ecx, [_MV_Count]
+
+        mov     esi, eax
         lea     edi, [edx - 1]
 
         xor     eax, eax
-
-        mov     ecx, [_MV_Count]
 
         ALIGN 4
 rev8loop:
@@ -115,7 +121,6 @@ rev8loop:
         mov     al, byte [esi]              ; get sample
         inc     edi
 
-        mov     ebx, [_MV_Volume]
 ;        movsx   eax, byte [2*eax+ebx]       ; volume translate sample
         mov     al, byte [2*eax+ebx]        ; volume translate sample
         inc     esi
@@ -127,6 +132,7 @@ rev8loop:
         mov     [edi], al                       ; write new sample to destination
         jnz     rev8loop                        ; loop
 
+        popad
         ret
 
 
@@ -143,6 +149,7 @@ rev8loop:
 
 global _MV_16BitReverbFast:
 _MV_16BitReverbFast:
+        pushad
 
         mov     esi, [_MV_Src]
         mov     eax,rpatch16+3
@@ -168,6 +175,7 @@ rpatch16:
 
         jnz     frev16loop                      ; loop
 
+        popad
         ret
 
 
@@ -184,6 +192,8 @@ rpatch16:
 
 global _MV_8BitReverbFast
 _MV_8BitReverbFast:
+        pushad
+
         mov     esi, [_MV_Src]
         mov     eax,rpatch8+2
 
@@ -222,4 +232,5 @@ rpatch8:
         mov     [edi], al                       ; write new sample to destination
         jnz     frev8loop                       ; loop
 
+        popad
         ret
