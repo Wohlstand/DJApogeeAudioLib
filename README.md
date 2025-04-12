@@ -12,3 +12,4 @@ This version __doesn't__ (yet) supports AWE32, Gravis UltraSound, SoundScape, an
 - MIDI synthesizer slightly improved:
   - added suport of CC11-Expression controller.
   - revised the pitch bend formula so it no longer gets messed during a time.
+  - On OPL3 chips the Center-Left-Right panning now works as expected (at original version panning didn't used on OPL3 chips).

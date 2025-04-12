@@ -220,6 +220,8 @@ void AL_SendOutput
    }
 
 
+static uint8_t AL_Pan2Chan( int pan );
+
 /*---------------------------------------------------------------------
    Function: AL_SetVoiceTimbre
 
@@ -292,8 +294,7 @@ static void AL_SetVoiceTimbre
       {
       if ( AL_OPL3 )
          {
-         AL_SendOutput( port, 0xC0 + voc, ( timbre->Feedback & 0x0f ) |
-            0x30 );
+         AL_SendOutput( port, 0xC0 + voc, ( timbre->Feedback & 0x0f ) | AL_Pan2Chan(Channel[ channel ].Pan) );
          }
       else
          {
@@ -314,6 +315,51 @@ static void AL_SetVoiceTimbre
    AL_SendOutput( port, 0x80 + off, timbre->Env2[ 1 ] );
    AL_SendOutput( port, 0x20 + off, timbre->SAVEK[ 1 ] );
    AL_SendOutput( port, 0xE0 + off, timbre->Wave[ 1 ] );
+   }
+
+
+static uint8_t AL_Pan2Chan
+   (
+   int pan
+   )
+   {
+   uint8_t oplpan = 0;
+
+   if ( pan < 64 + 16 )
+      oplpan |= 0x10;
+
+   if ( pan >= 64 - 16 )
+      oplpan |= 0x20;
+
+   return oplpan;
+   }
+
+
+static void AL_SetVoicePan
+   (
+   int voice
+   )
+   {
+   int channel;
+   int pan;
+   int slot;
+   int port;
+   int voc;
+   TIMBRE *timbre;
+   uint8_t panning = 0;
+
+   channel = Voice[ voice ].channel;
+   pan = Channel[ channel ].Pan;
+   timbre = &ADLIB_TimbreBank[ Voice[ voice ].timbre ];
+
+   voc  = ( voice >= NUM_VOICES ) ? voice - NUM_VOICES : voice;
+   port = Voice[ voice ].port;
+
+   if ( AL_OPL3 )
+      {
+         AL_SendOutput( port, 0xC0 + voc, ( timbre->Feedback & 0x0f ) | AL_Pan2Chan(pan) );
+      }
+
    }
 
 
@@ -677,10 +723,23 @@ static void AL_SetChannelPan
    )
 
    {
-   // Don't pan drum sounds
-   if ( channel != 9 )
+   VOICE *voice;
+   // // Don't pan drum sounds
+   // if ( channel != 9 )
+   //    {
+   if ( AL_OPL3 || channel != 9 )
       {
       Channel[ channel ].Pan = pan;
+      }
+
+   if ( AL_OPL3 )
+      {
+      voice = Channel[ channel ].Voices.start;
+      while( voice != NULL )
+         {
+         AL_SetVoicePan( voice->num );
+         voice = voice->next;
+         }
       }
    }
 
@@ -1191,15 +1250,25 @@ void AL_ControlChange
          AL_SetChannelDetune( channel, data );
          break;
 
+      case MIDI_ALL_SOUNDS_OFF:
+         // TODO: Implement full muting of notes when trigger this controller
+         AL_AllNotesOff( channel );
+         break;
+
       case MIDI_ALL_NOTES_OFF :
          AL_AllNotesOff( channel );
          break;
 
       case MIDI_RESET_ALL_CONTROLLERS :
-         AL_ResetVoicesPart();
          // AL_SetChannelVolume( channel, AL_DefaultChannelVolume );
          // AL_SetChannelPan( channel, 64 );
+         AL_SetChannelExpression( channel, 127 );
          AL_SetChannelDetune( channel, 0 );
+         Channel[ channel ].Pitchbend = 0;
+         Channel[ channel ].PitchBendSemiTones = 0;
+         Channel[ channel ].PitchBendHundreds = 2;
+         AL_UpdateBendMult ( channel );
+         AL_ResetVoicesPart();
          break;
 
       case MIDI_RPN_MSB :

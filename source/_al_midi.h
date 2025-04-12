@@ -62,6 +62,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define MIDI_PAN             10
 #define MIDI_EXPRESSION      11
 #define MIDI_DETUNE          94
+#define MIDI_ALL_SOUNDS_OFF  0x78
 #define MIDI_ALL_NOTES_OFF   0x7B
 #define MIDI_RESET_ALL_CONTROLLERS 0x79
 #define MIDI_RPN_MSB               100
