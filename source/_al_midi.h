@@ -46,6 +46,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define MAX_NOTE       ( MAX_OCTAVE * 12 + 11 )
 #define FINETUNE_MAX   31
 #define FINETUNE_RANGE ( FINETUNE_MAX + 1 )
+#define BENDSENS_RANGE 1048576 /* (8192 * 128) or << 20 */
 
 #define PITCHBEND_CENTER 1638400
 
@@ -146,7 +147,7 @@ typedef struct
    short     PitchBendSemiTones;
    short     PitchBendHundreds;
    // short     PitchBendRange;
-   float     PitchBendMultiplier;
+   int       PitchBendMultiplier;
    } CHANNEL;
 
 typedef struct

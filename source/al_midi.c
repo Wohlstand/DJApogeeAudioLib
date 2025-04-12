@@ -527,8 +527,8 @@ static void AL_SetVoicePitch
    int pitch;
    int port;
    int voc;
-   float bendDec;
-   float toneF;
+   int bendDec;
+   int toneF;
 
    port = Voice[ voice ].port;
    voc  = ( voice >= NUM_VOICES ) ? voice - NUM_VOICES : voice;
@@ -545,15 +545,15 @@ static void AL_SetVoicePitch
       note  = Voice[ voice ].key + ADLIB_TimbreBank[ patch ].Transpose;
       }
 
-   toneF = note + (Channel[ channel ].Pitchbend * Channel[ channel ].PitchBendMultiplier);
-   toneI = (int)toneF;
-   bendDec = toneF - (int)toneF;
+   toneF = (note << 20) + (Channel[ channel ].Pitchbend * Channel[ channel ].PitchBendMultiplier);
+   bendDec = (toneF % BENDSENS_RANGE);
+   toneI = toneF - bendDec;
 
-   bend = (int)(bendDec * 32) + 32;
+   bend = (bendDec * 32) + (32 << 20); //* BENDSENS_RANGE;
    toneI += bend / 32;
-   toneI -= 1;
+   toneI -= BENDSENS_RANGE; /* 1 */
 
-   note = toneI - 12;
+   note = (toneI >> 20) - 12;
    // note += Channel[ channel ].KeyOffset - 12;
    if ( note > MAX_NOTE )
       {
@@ -564,7 +564,7 @@ static void AL_SetVoicePitch
       note = 0;
       }
 
-   detune = bend % FINETUNE_RANGE;
+   detune = (bend >> 20) % FINETUNE_RANGE;
    // detune = Channel[ channel ].KeyDetune;
 
    ScaleNote = NoteMod12[ note ];
@@ -747,7 +747,7 @@ static void AL_UpdateBendMult
    )
    {
    int cent = Channel[ channel ].PitchBendSemiTones * 128 + Channel[ channel ].PitchBendHundreds;
-   Channel[ channel ].PitchBendMultiplier = cent * (1.0f / (128 * 8192));
+   Channel[ channel ].PitchBendMultiplier = cent;
    }
 
 
