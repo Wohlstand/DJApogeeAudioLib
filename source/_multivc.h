@@ -254,7 +254,7 @@ extern void MV_Mix16BitStereo16_Wrapper( unsigned long position, unsigned long r
 
 void MV_16BitReverb_Wrapper( uint8_t *src, uint8_t *dest, VOLUME16 *volume, int count );
 // #pragma aux MV_16BitReverb parm [eax] [edx] [ebx] [ecx] modify exact [eax ebx ecx edx esi edi]
-void MV_8BitReverb_Wrapper( int8_t *src, uint8_t *dest, VOLUME16 *volume, int count );
+void MV_8BitReverb_Wrapper( uint8_t *src, uint8_t *dest, VOLUME16 *volume, int count );
 // #pragma aux MV_8BitReverb parm [eax] [edx] [ebx] [ecx] modify exact [eax ebx ecx edx esi edi]
 void MV_16BitReverbFast_Wrapper( uint8_t *src, uint8_t *dest, int count, int shift );
 // #pragma aux MV_16BitReverbFast parm [eax] [edx] [ebx] [ecx] modify exact [eax ebx ecx edx esi edi]
