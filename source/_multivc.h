@@ -242,7 +242,7 @@ void ClearBuffer_DW( void *ptr, unsigned data, int length );
 //    "pop    es",              \
 // parm [ edi ] [ eax ] [ ecx ] modify exact [ ecx edi ];
 
-extern void MV_Mix8BitMono_Wrapper(unsigned long position, unsigned long rate, uint8_t *start, unsigned long length);
+extern void MV_Mix8BitMono_Wrapper( unsigned long position, unsigned long rate, uint8_t *start, unsigned long length );
 extern void MV_Mix8BitStereo_Wrapper( unsigned long position, unsigned long rate, uint8_t *start, unsigned long length );
 extern void MV_Mix16BitMono_Wrapper( unsigned long position, unsigned long rate, uint8_t *start, unsigned long length );
 extern void MV_Mix16BitStereo_Wrapper( unsigned long position, unsigned long rate, uint8_t *start, unsigned long length );
@@ -252,13 +252,13 @@ extern void MV_Mix8BitMono16_Wrapper( unsigned long position, unsigned long rate
 extern void MV_Mix8BitStereo16_Wrapper( unsigned long position, unsigned long rate, uint8_t *start, unsigned long length );
 extern void MV_Mix16BitStereo16_Wrapper( unsigned long position, unsigned long rate, uint8_t *start, unsigned long length );
 
-void MV_16BitReverb_Wrapper(uint8_t *src, uint8_t *dest, VOLUME16 *volume, int count );
+void MV_16BitReverb_Wrapper( uint8_t *src, uint8_t *dest, VOLUME16 *volume, int count );
 // #pragma aux MV_16BitReverb parm [eax] [edx] [ebx] [ecx] modify exact [eax ebx ecx edx esi edi]
-void MV_8BitReverb_Wrapper( uint8_t *src, uint8_t *dest, VOLUME16 *volume, int count );
+void MV_8BitReverb_Wrapper( int8_t *src, uint8_t *dest, VOLUME16 *volume, int count );
 // #pragma aux MV_8BitReverb parm [eax] [edx] [ebx] [ecx] modify exact [eax ebx ecx edx esi edi]
-void MV_16BitReverbFast_Wrapper(uint8_t *src, uint8_t *dest, int count, int shift );
+void MV_16BitReverbFast_Wrapper( uint8_t *src, uint8_t *dest, int count, int shift );
 // #pragma aux MV_16BitReverbFast parm [eax] [edx] [ebx] [ecx] modify exact [eax ebx ecx edx esi edi]
-void MV_8BitReverbFast_Wrapper(uint8_t *src, uint8_t *dest, int count, int shift );
+void MV_8BitReverbFast_Wrapper( uint8_t *src, uint8_t *dest, int count, int shift );
 // #pragma aux MV_8BitReverbFast parm [eax] [edx] [ebx] [ecx] modify exact [eax ebx ecx edx esi edi]
 
 #ifndef MULTIVOC_ASM_IMP
