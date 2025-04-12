@@ -78,6 +78,7 @@ enum fx_BLASTER_Types
    fx_SB16   = 6
    };
 
+extern void USER_InitArgs(int argc, char **argv);
 
 char *FX_ErrorString( int ErrorNumber );
 int   FX_SetupCard( int SoundCard, fx_device *device );

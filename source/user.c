@@ -35,8 +35,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define TRUE  ( 1 == 1 )
 #define FALSE ( !TRUE )
 
-static int   _argc;
-static char **_argv;
+static int   _argc = 0;
+static char **_argv = NULL;
 
 void USER_InitArgs
    (
