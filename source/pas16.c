@@ -98,7 +98,7 @@ int PAS_TestAddress(int address)
 //    "and   eax, 0ffh" \
 //    parm [ eax ] modify exact [ eax dx ];
 
-// #define USESTACK
+#define USESTACK
 
 static const int PAS_Interrupts[ PAS_MaxIrq + 1 ]  =
    {
@@ -315,7 +315,7 @@ int PAS_CheckForDriver
    regs.w.ax = MV_CheckForDriver;
    regs.w.bx = 0x3f3f;
 
-   #ifdef __386__
+   #if defined(__386__) || defined(__DJGPP__)
       int386( MV_SoundInt, &regs, &regs );
    #else
       int86( MV_SoundInt, &regs, &regs );
@@ -357,7 +357,7 @@ MVState *PAS_GetStateTable
 
    regs.w.ax = MV_GetPointerToStateTable;
 
-   #ifdef __386__
+   #if defined(__386__) || defined(__DJGPP__)
       int386( MV_SoundInt, &regs, &regs );
    #else
       int86( MV_SoundInt, &regs, &regs );
@@ -398,7 +398,7 @@ MVFunc *PAS_GetFunctionTable
 
    regs.w.ax = MV_GetPointerToFunctionTable;
 
-   #ifdef __386__
+   #if defined(__386__) || defined(__DJGPP__)
       int386( MV_SoundInt, &regs, &regs );
    #else
       int86( MV_SoundInt, &regs, &regs );
@@ -438,7 +438,7 @@ int PAS_GetCardSettings
 
    regs.w.ax = MV_GetDmaIrqInt;
 
-   #ifdef __386__
+   #if defined(__386__) || defined(__DJGPP__)
       int386( MV_SoundInt, &regs, &regs );
    #else
       int86( MV_SoundInt, &regs, &regs );
