@@ -31,9 +31,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef __IRQ_H
 #define __IRQ_H
 
-#include "djconfig.h"
+#define IRQ_NO_SET_VECTOR
 
-// #define IRQ_NO_SET_VECTOR
+#ifndef IRQ_NO_SET_VECTOR
+#include "djconfig.h"
+#endif
 
 enum IRQ_ERRORS
    {
