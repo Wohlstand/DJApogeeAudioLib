@@ -265,7 +265,7 @@ void MV_8BitReverbFast_Wrapper( uint8_t *src, uint8_t *dest, int count, int shif
 #define MV_Mix8BitMono MV_Mix8BitMono_Wrapper
 #define MV_Mix8BitStereo MV_Mix8BitStereo_Wrapper
 #define MV_Mix16BitMono MV_Mix16BitMono_Wrapper
-#define MV_Mix16BitStereo MV_Mix16BitStereo16_Wrapper
+#define MV_Mix16BitStereo MV_Mix16BitStereo_Wrapper
 
 #define MV_Mix8BitMono16 MV_Mix8BitMono16_Wrapper
 #define MV_Mix8BitStereo16 MV_Mix8BitStereo16_Wrapper
