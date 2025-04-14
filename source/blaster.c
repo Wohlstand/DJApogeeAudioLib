@@ -297,11 +297,8 @@ void BLASTER_EnableInterrupt
    )
 
    {
-   int32_t mask = inp(0x21) & ~(1 << BLASTER_Config.Interrupt);
-   outp(0x21, mask);
-#if 0
-   int Irq;
-   int mask;
+   int32_t Irq;
+   int32_t mask;
 
    // Unmask system interrupt
    Irq  = BLASTER_Config.Interrupt;
@@ -318,7 +315,7 @@ void BLASTER_EnableInterrupt
       mask = inp( 0x21 ) & ~( 1 << 2 );
       outp( 0x21, mask  );
       }
-#endif
+
    }
 
 
@@ -334,14 +331,8 @@ void BLASTER_DisableInterrupt
    )
 
    {
+   int32_t Irq;
    int32_t mask;
-   // Restore interrupt mask
-   mask  = inp(0x21) & ~(1 << BLASTER_Config.Interrupt);
-   mask |= BLASTER_IntController1Mask & (1 << BLASTER_Config.Interrupt);
-   outp(0x21, mask);
-#if 0
-   int Irq;
-   int mask;
 
    // Restore interrupt mask
    Irq  = BLASTER_Config.Interrupt;
@@ -361,7 +352,6 @@ void BLASTER_DisableInterrupt
       mask |= BLASTER_IntController2Mask & ( 1 << ( Irq - 8 ) );
       outp( 0xA1, mask  );
       }
-#endif
    }
 
 
@@ -456,10 +446,10 @@ static void __interrupt __far BLASTER_ServiceInterrupt
    #endif
 
    // send EOI to Interrupt Controller
-   // if ( BLASTER_Config.Interrupt > 7 )
-   //    {
-   //    outp( 0xA0, 0x20 );
-   //    }
+   if ( BLASTER_Config.Interrupt > 7 )
+      {
+      outp( 0xA0, 0x20 );
+      }
 
    outp( 0x20, 0x20 );
    }
