@@ -45,10 +45,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 int PAS_TestAddress(int address)
 {
-   int a;
+   int16_t a;
 
    asm
    (
+      "mov   %1, %%eax \n"
       "mov   $0x0b8b, %%dx \n"
       "xor   %%ax, %%dx \n"
       "in    %%dx, %%al \n"
@@ -66,10 +67,11 @@ int PAS_TestAddress(int address)
       "out   %%al, %%dx \n"
       "sub   %%ah, %%al \n"
    "TestExit%=: \n"
-      "and   $0x0ff, %%eax"
-      : [dx]"=r" (a)
-      : [eax]"r" (address)
-      : "%eax"
+      "and   $0x0ff, %%eax \n"
+      "mov   %%dx, %0 \n"
+      : "=r" (a)
+      : "r" (address)
+      : "%eax", "%dx"
    );
 
    return a;
@@ -150,11 +152,11 @@ void ( *PAS_CallBack )( void );
 // adequate stack size
 #define kStackSize 2048
 
-static unsigned short StackSelector = 0;
-static unsigned long  StackPointer;
+static uint16_t StackSelector = 0;
+static uint32_t StackPointer;
 
-static unsigned short oldStackSelector;
-static unsigned long  oldStackPointer;
+static uint16_t oldStackSelector;
+static uint32_t oldStackPointer;
 
 // This is defined because we can't create local variables in a
 // function that switches stacks.
@@ -162,25 +164,46 @@ static int irqstatus;
 
 // These declarations are necessary to use the inline assembly pragmas.
 
-extern void GetStack(unsigned short *selptr,unsigned long *stackptr);
-extern void SetStack(unsigned short selector,unsigned long stackptr);
-
 // This function will get the current stack selector and pointer and save
 // them off.
-#pragma aux GetStack =  \
-   "mov  [edi],esp"     \
-   "mov  ax,ss"         \
-   "mov  [esi],ax"      \
-   parm [esi] [edi]     \
-   modify [eax esi edi];
+static __attribute__((always_inline)) inline void GetStack(uint16_t *selptr, uint32_t *stackptr)
+{
+   asm
+   (
+      "mov %%esp, %1 \n"
+      "mov %%ss, %%ax \n"
+      "mov %%ax, %0 \n"
+      : "=a"(*selptr), "=b"(*stackptr)
+      :
+      : "%esi", "%edi"
+   );
+}
+// #pragma aux GetStack =	\
+// 	"mov  [edi],esp"		\
+// 	"mov	ax,ss"	 		\
+// 	"mov  [esi],ax" 		\
+// 	parm [esi] [edi]		\
+// 	modify [eax esi edi];
+
 
 // This function will set the stack selector and pointer to the specified
 // values.
-#pragma aux SetStack =  \
-   "mov  ss,ax"         \
-   "mov  esp,edx"       \
-   parm [ax] [edx]      \
-   modify [eax edx];
+static __attribute__((always_inline)) inline void SetStack(uint16_t selector, uint32_t stackptr)
+{
+   asm
+   (
+      "mov %0, %%ss \n"
+      "mov %1, %%esp\n"
+      :
+      : "a"(selector), "b"(stackptr)
+   );
+}
+
+// #pragma aux SetStack =	\
+// 	"mov  ss,ax"			\
+// 	"mov  esp,edx"			\
+// 	parm [ax] [edx]		\
+// 	modify [eax edx];
 
 int PAS_ErrorCode = PAS_Ok;
 
