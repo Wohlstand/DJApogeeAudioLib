@@ -1,5 +1,4 @@
 #include <stddef.h>
-#include <stdio.h>
 #include <stdint.h>
 
 #define MULTIVOC_ASM_IMP
