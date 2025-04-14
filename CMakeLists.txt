@@ -7,6 +7,8 @@ set(CMAKE_ASM_NASM_SOURCE_FILE_EXTENSIONS ${CMAKE_ASM_NASM_SOURCE_FILE_EXTENSION
 
 enable_language(ASM_NASM)
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror=implicit-function-declaration -Werror=pointer-sign")
+
 add_library(ass_usrhooks OBJECT
     include/usrhooks/usrhooks.c
     include/usrhooks/usrhooks.h
@@ -58,7 +60,7 @@ add_library(ass_audio STATIC
     # source/mv1.c
     # source/myprint.c source/myprint.h
     # ------- Junk
-    # source/pas16.c source/pas16.h source/_pas16.h
+    source/pas16.c source/pas16.h source/_pas16.h
     source/pcfx.c       source/pcfx.h
     source/pitch.c      source/pitch.h
     include/sndcards.h
@@ -81,6 +83,8 @@ add_library(ass_audio STATIC
     source/mvreverb.asm
     source/multvcas.c
 )
+
+target_compile_definitions(ass_audio PRIVATE -DULTRASOUND_OFF -DAWE32_OFF -DSOUNDSCAPE_OFF)
 
 target_include_directories(ass_audio PUBLIC include)
 target_include_directories(ass_audio PRIVATE include/usrhooks)

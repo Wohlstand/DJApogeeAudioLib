@@ -6,10 +6,15 @@ Can be built with CMake as a static library. Also can be used as a sub-directory
 
 This version __doesn't__ (yet) supports AWE32, Gravis UltraSound, SoundScape, and Pro Audio Spectrum due to various problems such as:
 - AWE32, GUS, and SoundScape require use of proprietary binary libraries that aren't compatible to DJGPP. However, Gravis Ultrasound libraries are available in the source code form, however, they have GPL incompatible license to be distributed together.
-- Pro Audio Spectrum support didn't yet polished enough to work.
+- Pro Audio Spectrum support is presented, however, I had no hardware or suitable emulator to verify the work of the code.
 
 ## This version also has some improvements
 - MIDI synthesizer slightly improved:
   - added suport of CC11-Expression controller.
   - revised the pitch bend formula so it no longer gets messed during a time.
   - On OPL3 chips the Center-Left-Right panning now works as expected (at original version panning didn't used on OPL3 chips).
+
+
+## Known bugs
+- Can't correctly play stereo files (the support wasn't be here officially, old readme contains that note)
+- Distorted playback on stereo outputs

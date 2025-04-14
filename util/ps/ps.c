@@ -208,7 +208,7 @@ int main
       return 1;
       }
 
-   printf("Init FX...\n");
+   printf("Init FX... (C=%d, V=%d, C=%d, B=%d, R=%d)\n", card, voices, channels, bits, rate);
    status = FX_Init( card, voices, channels, bits, rate );
    if ( status != FX_Ok )
       {

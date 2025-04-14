@@ -45,33 +45,34 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 int PAS_TestAddress(int address)
 {
-    int a;
+   int a;
 
-    asm
-    (
-       "mov   $0x0b8b, %%dx \n"
-       "xor   %%ax, %%dx \n"
-       "in    %%dx, %%al \n"
-       "cmp   $0x0ff, %%al \n"
-       "je    TestExit \n"
-       "mov   %%al, %%ah \n"
-       "xor   $0x0e0, %%al \n"
-       "out   %%al, %%dx \n"
-       "jmp   TestDelay1 \n"
-       "TestDelay1: \n"
-       "jmp   TestDelay2 \n"
-       "TestDelay2: \n"
-       "in    %%dx, %%al \n"
-       "xchg  %%ah, %%al \n"
-       "out   %%al, %%dx \n"
-       "sub   %%ah, %%al \n"
-       "TestExit: \n"
-       "and   $0x0ff, %%eax"
-       : [dx]"=r" (a)
-       : [eax]"r" (address)
-    );
+   asm
+   (
+      "mov   $0x0b8b, %%dx \n"
+      "xor   %%ax, %%dx \n"
+      "in    %%dx, %%al \n"
+      "cmp   $0x0ff, %%al \n"
+      "je    TestExit%= \n"
+      "mov   %%al, %%ah \n"
+      "xor   $0x0e0, %%al \n"
+      "out   %%al, %%dx \n"
+      "jmp   TestDelay1%= \n"
+   "TestDelay1%=: \n"
+      "jmp   TestDelay2%= \n"
+   "TestDelay2%=: \n"
+      "in    %%dx, %%al \n"
+      "xchg  %%ah, %%al \n"
+      "out   %%al, %%dx \n"
+      "sub   %%ah, %%al \n"
+   "TestExit%=: \n"
+      "and   $0x0ff, %%eax"
+      : [dx]"=r" (a)
+      : [eax]"r" (address)
+      : "%eax"
+   );
 
-    return a;
+   return a;
 }
 
 // #pragma aux PAS_TestAddress = \
@@ -132,9 +133,9 @@ static MVFunc  *PAS_Func  = NULL;
 static MVState PAS_OriginalState;
 static int     PAS_SampleSizeConfig;
 
-static char   *PAS_DMABuffer;
-static char   *PAS_DMABufferEnd;
-static char   *PAS_CurrentDMABuffer;
+static uint8_t *PAS_DMABuffer;
+static uint8_t *PAS_DMABufferEnd;
+static uint8_t *PAS_CurrentDMABuffer;
 static int     PAS_TotalDMABufferSize;
 
 static int      PAS_TransferLength   = 0;
@@ -550,7 +551,7 @@ void PAS_DisableInterrupt
    transfer.  Calls the user supplied callback function.
 ---------------------------------------------------------------------*/
 
-void interrupt far PAS_ServiceInterrupt
+static void interrupt far PAS_ServiceInterrupt
    (
    void
    )
@@ -870,7 +871,7 @@ void PAS_StopPlayback
 
 int PAS_SetupDMABuffer
    (
-   char *BufferPtr,
+   uint8_t *BufferPtr,
    int   BufferSize,
    int   mode
    )
@@ -913,7 +914,7 @@ int PAS_GetCurrentPos
    )
 
    {
-   char *CurrentAddr;
+   uint8_t *CurrentAddr;
    int   offset;
 
    if ( !PAS_SoundPlaying )
@@ -1089,7 +1090,7 @@ void PAS_BeginTransfer
 
 int PAS_BeginBufferedPlayback
    (
-   char *BufferStart,
+   uint8_t *BufferStart,
    int   BufferSize,
    int   NumDivisions,
    unsigned SampleRate,
@@ -1128,7 +1129,7 @@ int PAS_BeginBufferedPlayback
 
 int PAS_BeginBufferedRecord
    (
-   char *BufferStart,
+   uint8_t *BufferStart,
    int   BufferSize,
    int   NumDivisions,
    unsigned SampleRate,
@@ -1796,7 +1797,6 @@ int PAS_Init
 
    // Install our interrupt handler
    Interrupt = PAS_Interrupts[ PAS_Irq ];
-   // FIXME: Verify if this is valid
    replaceInterrupt(PAS_OldInt, PAS_NewInt, Interrupt, PAS_ServiceInterrupt);
 #if 0
    PAS_OldInt = _dos_getvect( Interrupt );
@@ -1857,10 +1857,10 @@ void PAS_Shutdown
 
       // Restore the original interrupt
       Interrupt = PAS_Interrupts[ PAS_Irq ];
-      if ( PAS_Irq >= 8 )
-         {
-         IRQ_RestoreVector( Interrupt );
-         }
+      // if ( PAS_Irq >= 8 )
+      //    {
+      //    IRQ_RestoreVector( Interrupt );
+      //    }
       restoreInterrupt(Interrupt, PAS_OldInt, PAS_NewInt);
       // _dos_setvect( Interrupt, PAS_OldInt );
 

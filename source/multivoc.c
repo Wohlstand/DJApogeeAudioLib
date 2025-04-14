@@ -42,10 +42,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "linklist.h"
 #include "sndcards.h"
 #include "blaster.h"
-// #include "sndscape.h"
+#ifndef SOUNDSCAPE_OFF
+#include "sndscape.h"
+#endif
 #include "sndsrc.h"
-// #include "pas16.h"
-// #include "guswave.h"
+#include "pas16.h"
+#ifndef ULTRASOUND_OFF
+#include "guswave.h"
+#endif
 #include "pitch.h"
 #include "multivoc.h"
 #include "_multivc.h"
@@ -180,13 +184,15 @@ char *MV_ErrorString
          break;
 
       case MV_PasError :
-         // ErrorString = PAS_ErrorString( PAS_Error );
-         ErrorString = "ProAudio Spectrum support is not built";
+         ErrorString = PAS_ErrorString( PAS_Error );
          break;
 
       case MV_SoundScapeError :
-         // ErrorString = SOUNDSCAPE_ErrorString( SOUNDSCAPE_Error );
+      #ifdef SOUNDSCAPE_OFF
          ErrorString = "SoundSccape support is not built";
+      #else
+         ErrorString = SOUNDSCAPE_ErrorString( SOUNDSCAPE_Error );
+      #endif
          break;
 
       #ifndef SOUNDSOURCE_OFF
@@ -421,7 +427,6 @@ void MV_ServiceVoc
       {
       MV_MixPage -= MV_NumberOfBuffers;
       }
-
 
    if ( MV_ReverbLevel == 0 )
       {
@@ -1037,6 +1042,7 @@ VoiceNode *MV_GetVoice
    if ( voice == &VoiceList )
       {
       MV_SetErrorCode( MV_VoiceNotFound );
+      voice = NULL;
       }
 
    return( voice );
@@ -1066,7 +1072,7 @@ int MV_VoicePlaying
 
    voice = MV_GetVoice( handle );
 
-   if ( voice == &VoiceList )
+   if ( voice == NULL )
       {
       return( FALSE );
       }
@@ -1836,11 +1842,13 @@ int MV_SetMixMode
 
       case ProAudioSpectrum :
       case SoundMan16 :
-         // MV_MixMode = PAS_SetMixMode( mode );
+         MV_MixMode = PAS_SetMixMode( mode );
          break;
 
       case SoundScape :
-         // MV_MixMode = SOUNDSCAPE_SetMixMode( mode );
+      #ifndef SOUNDSCAPE_OFF
+         MV_MixMode = SOUNDSCAPE_SetMixMode( mode );
+      #endif
          break;
 
       #ifndef SOUNDSOURCE_OFF
@@ -1945,7 +1953,10 @@ int MV_StartPlayback
          break;
 
       case UltraSound :
-#if 0
+      #ifdef ULTRASOUND_OFF
+         MV_SetErrorCode( MV_BlasterError );
+         return( MV_Error );
+      #else
          status = GUSWAVE_StartDemandFeedPlayback( MV_ServiceGus, 1,
             MV_Bits, MV_RequestedMixRate, 0, ( MV_Channels == 1 ) ?
             0 : 24, 255, 0xffff, 0 );
@@ -1969,12 +1980,11 @@ int MV_StartPlayback
 
          MV_MixRate = MV_RequestedMixRate;
          MV_DMAChannel = -1;
-#endif
+      #endif
          break;
 
       case ProAudioSpectrum :
       case SoundMan16 :
-#if 0
          status = PAS_BeginBufferedPlayback( MV_MixBuffer[ 0 ],
             TotalBufferSize, MV_NumberOfBuffers,
             MV_RequestedMixRate, MV_MixMode, MV_ServiceVoc );
@@ -1987,11 +1997,10 @@ int MV_StartPlayback
 
          MV_MixRate = PAS_GetPlaybackRate();
          MV_DMAChannel = PAS_DMAChannel;
-#endif
          break;
 
       case SoundScape :
-#if 0
+      #ifndef SOUNDSCAPE_OFF
          status = SOUNDSCAPE_BeginBufferedPlayback( MV_MixBuffer[ 0 ],
             TotalBufferSize, MV_NumberOfBuffers, MV_RequestedMixRate,
             MV_MixMode, MV_ServiceVoc );
@@ -2004,7 +2013,7 @@ int MV_StartPlayback
 
          MV_MixRate = SOUNDSCAPE_GetPlaybackRate();
          MV_DMAChannel = SOUNDSCAPE_DMAChannel;
-#endif
+      #endif
          break;
 
       #ifndef SOUNDSOURCE_OFF
@@ -2047,18 +2056,22 @@ void MV_StopPlayback
          BLASTER_StopPlayback();
          break;
 
+      #ifndef ULTRASOUND_OFF
       case UltraSound :
-         // GUSWAVE_KillAllVoices();
+         GUSWAVE_KillAllVoices();
          break;
+      #endif
 
       case ProAudioSpectrum :
       case SoundMan16 :
-         // PAS_StopPlayback();
+         PAS_StopPlayback();
          break;
 
+      #ifndef SOUNDSCAPE_OFF
       case SoundScape :
-         // SOUNDSCAPE_StopPlayback();
+         SOUNDSCAPE_StopPlayback();
          break;
+      #endif
 
       #ifndef SOUNDSOURCE_OFF
       case SoundSource :
@@ -2150,17 +2163,15 @@ int MV_StartRecording
 
       case ProAudioSpectrum :
       case SoundMan16 :
-         MV_SetErrorCode( MV_PasError );
-         return( MV_Error );
-         // status = PAS_BeginBufferedRecord( MV_MixBuffer[ 0 ],
-         //    TotalBufferSize, NumberOfBuffers, MixRate, MONO_8BIT,
-         //    MV_ServiceRecord );
+         status = PAS_BeginBufferedRecord( MV_MixBuffer[ 0 ],
+            TotalBufferSize, NumberOfBuffers, MixRate, MONO_8BIT,
+            MV_ServiceRecord );
 
-         // if ( status != PAS_Ok )
-         //    {
-         //    MV_SetErrorCode( MV_PasError );
-         //    return( MV_Error );
-         //    }
+         if ( status != PAS_Ok )
+            {
+            MV_SetErrorCode( MV_PasError );
+            return( MV_Error );
+            }
          break;
       }
 
@@ -2191,7 +2202,7 @@ void MV_StopRecord
 
       case ProAudioSpectrum :
       case SoundMan16 :
-         // PAS_StopPlayback();
+         PAS_StopPlayback();
          break;
       }
 
@@ -2997,15 +3008,16 @@ int MV_TestPlayback
 
          case ProAudioSpectrum :
          case SoundMan16 :
-            // pos = PAS_GetCurrentPos();
-            MV_SetErrorCode( MV_UnsupportedCard );
-            pos = -2;
+            pos = PAS_GetCurrentPos();
             break;
 
          case SoundScape :
-            // pos = SOUNDSCAPE_GetCurrentPos();
+         #ifdef SOUNDSCAPE_OFF
             MV_SetErrorCode( MV_UnsupportedCard );
             pos = -2;
+         #else
+            pos = SOUNDSCAPE_GetCurrentPos();
+         #endif
             break;
 
          #ifndef SOUNDSOURCE_OFF
@@ -3132,13 +3144,16 @@ int MV_Init
    switch( soundcard )
       {
       case UltraSound :
+      #ifdef ULTRASOUND_OFF
          MV_SetErrorCode( MV_BlasterError );
-         // status = GUSWAVE_Init( 2 );
-         // if ( status != GUSWAVE_Ok )
-         //    {
-         //    //JIM
-         //    MV_SetErrorCode( MV_BlasterError );
-         //    }
+      #else
+         status = GUSWAVE_Init( 2 );
+         if ( status != GUSWAVE_Ok )
+            {
+            //JIM
+            MV_SetErrorCode( MV_BlasterError );
+            }
+      #endif
          break;
 
       case SoundBlaster :
@@ -3158,21 +3173,23 @@ int MV_Init
 
       case ProAudioSpectrum :
       case SoundMan16 :
-         MV_SetErrorCode( MV_PasError );
-         // status = PAS_Init();
-         // if ( status != PAS_Ok )
-         //    {
-         //    MV_SetErrorCode( MV_PasError );
-         //    }
+         status = PAS_Init();
+         if ( status != PAS_Ok )
+            {
+            MV_SetErrorCode( MV_PasError );
+            }
          break;
 
       case SoundScape :
-        MV_SetErrorCode( MV_SoundScapeError );
-         // status = SOUNDSCAPE_Init();
-         // if ( status != SOUNDSCAPE_Ok )
-         //    {
-         //    MV_SetErrorCode( MV_SoundScapeError );
-         //    }
+      #ifdef SOUNDSCAPE_OFF
+         MV_SetErrorCode( MV_SoundScapeError );
+      #else
+         status = SOUNDSCAPE_Init();
+         if ( status != SOUNDSCAPE_Ok )
+            {
+            MV_SetErrorCode( MV_SoundScapeError );
+            }
+      #endif
          break;
 
       #ifndef SOUNDSOURCE_OFF
@@ -3302,9 +3319,11 @@ int MV_Shutdown
    // Shutdown the sound card
    switch( MV_SoundCard )
       {
+      #ifndef ULTRASOUND_OFF
       case UltraSound :
-         // GUSWAVE_Shutdown();
+         GUSWAVE_Shutdown();
          break;
+      #endif
 
       case SoundBlaster :
       case Awe32 :
@@ -3313,12 +3332,14 @@ int MV_Shutdown
 
       case ProAudioSpectrum :
       case SoundMan16 :
-         // PAS_Shutdown();
+         PAS_Shutdown();
          break;
 
+      #ifndef SOUNDSCAPE_OFF
       case SoundScape :
-         // SOUNDSCAPE_Shutdown();
+         SOUNDSCAPE_Shutdown();
          break;
+      #endif
 
       #ifndef SOUNDSOURCE_OFF
       case SoundSource :

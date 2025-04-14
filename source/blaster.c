@@ -2270,7 +2270,6 @@ int BLASTER_Init
       // Leave a little room at top of stack just for the hell of it...
       // StackPointer = kStackSize - sizeof( long );
 
-      // FIXME: Verify this
       replaceInterrupt(BLASTER_OldInt, BLASTER_NewInt, Interrupt, BLASTER_ServiceInterrupt);
 #if 0
       BLASTER_OldInt = _dos_getvect( Interrupt );

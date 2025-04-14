@@ -34,23 +34,29 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "music.h"
 #include "midi.h"
 #include "al_midi.h"
-// #include "pas16.h"
+#include "pas16.h"
 #include "blaster.h"
-// #include "gusmidi.h"
+#ifndef ULTRASOUND_OFF
+#include "gusmidi.h"
+#endif
 #include "mpu401.h"
-// #include "awe32.h"
-// #include "sndscape.h"
+#ifndef AWE32_OFF
+#include "awe32.h"
+#endif
+#ifndef SOUNDSCAPE_OFF
+#include "sndscape.h"
+#endif
 #include "ll_man.h"
 #include "user.h"
 
 #define TRUE  ( 1 == 1 )
 #define FALSE ( !TRUE )
 
-void TextMode( void );
-#pragma aux TextMode =  \
-    "mov    ax, 0003h", \
-    "int    10h"        \
-    modify [ ax ];
+// void TextMode( void );
+// #pragma aux TextMode =  \
+//     "mov    ax, 0003h", \
+//     "int    10h"        \
+//     modify [ ax ];
 
 int MUSIC_SoundDevice = -1;
 int MUSIC_ErrorCode = MUSIC_Ok;
@@ -114,8 +120,7 @@ char *MUSIC_ErrorString
 
             case ProAudioSpectrum :
             case SoundMan16 :
-               // ErrorString = PAS_ErrorString( PAS_Error );
-               ErrorString = "ProAudioSpectrum support is not built";
+               ErrorString = PAS_ErrorString( PAS_Error );
                break;
 
             case Adlib :
@@ -128,18 +133,27 @@ char *MUSIC_ErrorString
                break;
 
             case SoundScape :
-               // ErrorString = SOUNDSCAPE_ErrorString( SOUNDSCAPE_Error );
+            #ifdef SOUNDSCAPE_OFF
                ErrorString = "SoundScape support is not built";
+            #else
+               ErrorString = SOUNDSCAPE_ErrorString( SOUNDSCAPE_Error );
+            #endif
                break;
 
             case Awe32 :
-               // ErrorString = AWE32_ErrorString( AWE32_Error );
+            #ifdef AWE32_OFF
                ErrorString = "AWE32 support is not built";
+            #else
+               ErrorString = AWE32_ErrorString( AWE32_Error );
+            #endif
                break;
 
             case UltraSound :
-               // ErrorString = GUS_ErrorString( GUS_Error );
+            #ifdef ULTRASOUND_OFF
                ErrorString = "GUS support is not built";
+            #else
+               ErrorString = GUS_ErrorString( GUS_Error );
+            #endif
                break;
 
             default :
@@ -304,20 +318,24 @@ int MUSIC_Shutdown
          BLASTER_RestoreMidiVolume();
          break;
 
+      #ifndef AWE32_OFF
       case Awe32 :
-         // AWE32_Shutdown();
+         AWE32_Shutdown();
          BLASTER_RestoreMidiVolume();
          break;
+      #endif
 
       case ProAudioSpectrum :
       case SoundMan16 :
          AL_Shutdown();
-         // PAS_RestoreMusicVolume();
+         PAS_RestoreMusicVolume();
          break;
 
+      #ifndef ULTRASOUND_OFF
       case UltraSound :
-         // GUSMIDI_Shutdown();
+         GUSMIDI_Shutdown();
          break;
+      #endif
       }
 
    LL_UnlockMemory();
@@ -669,9 +687,10 @@ int MUSIC_InitAWE32
    )
 
    {
+#ifdef AWE32_OFF
       MUSIC_SetErrorCode( MUSIC_SoundCardError );
       return( MUSIC_Error );
-#if 0
+#else
    int status;
 
    status = AWE32_Init();
@@ -767,12 +786,12 @@ int MUSIC_InitFM
          Funcs->SetVolume = NULL;
          Funcs->GetVolume = NULL;
 
-         // passtatus = PAS_SaveMusicVolume();
-         // if ( passtatus == PAS_Ok )
-         //    {
-         //    Funcs->SetVolume = PAS_SetFMVolume;
-         //    Funcs->GetVolume = PAS_GetFMVolume;
-         //    }
+         passtatus = PAS_SaveMusicVolume();
+         if ( passtatus == PAS_Ok )
+            {
+            Funcs->SetVolume = PAS_SetFMVolume;
+            Funcs->GetVolume = PAS_GetFMVolume;
+            }
          break;
       }
 
@@ -803,14 +822,17 @@ int MUSIC_InitMidi
 
    if ( card == SoundScape )
       {
+   #ifdef SOUNDSCAPE_OFF
+      MUSIC_SetErrorCode( MUSIC_SoundCardError );
+      return( MUSIC_Error );
+   #else
+      Address = SOUNDSCAPE_GetMIDIPort();
+      if ( Address < SOUNDSCAPE_Ok )
+         {
          MUSIC_SetErrorCode( MUSIC_SoundCardError );
          return( MUSIC_Error );
-      // Address = SOUNDSCAPE_GetMIDIPort();
-      // if ( Address < SOUNDSCAPE_Ok )
-      //    {
-      //    MUSIC_SetErrorCode( MUSIC_SoundCardError );
-      //    return( MUSIC_Error );
-      //    }
+         }
+   #endif
       }
 
    if ( MPU_Init( Address ) != MPU_Ok )
@@ -852,9 +874,10 @@ int MUSIC_InitGUS
    )
 
    {
+#ifdef ULTRASOUND_OFF
       MUSIC_SetErrorCode( MUSIC_SoundCardError );
       return( MUSIC_Error );
-#if 0
+#else
    int status;
 
    status = MUSIC_Ok;

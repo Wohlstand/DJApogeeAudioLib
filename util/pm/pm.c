@@ -46,7 +46,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 ---------------------------------------------------------------------*/
 
 void  LoadTimbres( char *timbrefile );
-char *LoadMidi( char *filename );
+uint8_t *LoadMidi( char *filename );
 char *GetUserText( const char *parameter, int _argc, char **_argv );
 int   CheckUserParm( const char *parameter, int _argc, char **_argv );
 void  DefaultExtension( char *path, char *extension );
@@ -90,7 +90,7 @@ int main
    int card;
    int address;
    int status;
-   char *SongPtr = NULL;
+   uint8_t *SongPtr = NULL;
    const char *ptr;
    char  filename[ 128 ];
    char  timbrefile[ 128 ];
@@ -342,7 +342,7 @@ void LoadTimbres
    Loads the midi file from disk.
 ---------------------------------------------------------------------*/
 
-char *LoadMidi
+uint8_t *LoadMidi
    (
    char *filename
    )
@@ -350,7 +350,7 @@ char *LoadMidi
    {
    FILE   *in;
    long   size;
-   char   *MidiPtr;
+   uint8_t *MidiPtr;
 
    if ( ( in = fopen( filename, "rb" ) ) == NULL )
       {
@@ -362,7 +362,7 @@ char *LoadMidi
    size = ftell( in );
    fseek( in, 0, SEEK_SET );
 
-   MidiPtr = ( char * )malloc( size );
+   MidiPtr = ( uint8_t * )malloc( size );
    if ( MidiPtr == NULL )
       {
       printf( "Out of memory while reading '%s'.\n", filename );

@@ -31,6 +31,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef __PAS16_H
 #define __PAS16_H
 
+#include <stdint.h>
+
 enum PAS_ERRORS
    {
    PAS_Warning = -2,
@@ -63,8 +65,8 @@ unsigned PAS_GetPlaybackRate( void );
 int   PAS_SetMixMode( int mode );
 void  PAS_StopPlayback( void );
 int   PAS_GetCurrentPos( void );
-int   PAS_BeginBufferedPlayback( char *BufferStart, int BufferSize, int NumDivisions, unsigned SampleRate, int MixMode, void ( *CallBackFunc )( void ) );
-int   PAS_BeginBufferedRecord( char *BufferStart, int BufferSize, int NumDivisions, unsigned SampleRate, int MixMode, void ( *CallBackFunc )( void ) );
+int   PAS_BeginBufferedPlayback( uint8_t *BufferStart, int BufferSize, int NumDivisions, unsigned SampleRate, int MixMode, void ( *CallBackFunc )( void ) );
+int   PAS_BeginBufferedRecord( uint8_t *BufferStart, int BufferSize, int NumDivisions, unsigned SampleRate, int MixMode, void ( *CallBackFunc )( void ) );
 int   PAS_SetPCMVolume( int volume );
 int   PAS_GetPCMVolume( void );
 void  PAS_SetFMVolume( int volume );

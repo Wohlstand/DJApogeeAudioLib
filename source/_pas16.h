@@ -32,6 +32,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef ___PAS16_H
 #define ___PAS16_H
 
+#include <stdint.h>
+
 #define TRUE    ( 1 == 1 )
 #define FALSE   ( !TRUE )
 
@@ -211,13 +213,13 @@ MVFunc  *PAS_GetFunctionTable( void );
 int     PAS_GetCardSettings( void );
 void    PAS_EnableInterrupt( void );
 void    PAS_DisableInterrupt( void );
-void    /*interrupt far*/ PAS_ServiceInterrupt( void );
+// void    interrupt far PAS_ServiceInterrupt( void );
 //void    interrupt PAS_ServiceInterrupt( void );
 void    PAS_Write( int Register, int Data );
 int     PAS_Read( int Register );
 void    PAS_SetSampleRateTimer( void );
 void    PAS_SetSampleBufferCount( void );
-int     PAS_SetupDMABuffer( char *BufferPtr, int BufferSize, int mode );
+int     PAS_SetupDMABuffer(uint8_t *BufferPtr, int BufferSize, int mode );
 int     PAS_GetFilterSetting( int rate );
 void    PAS_BeginTransfer( int mode );
 int     PAS_TestAddress( int address );
