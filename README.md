@@ -4,9 +4,9 @@ A DJGPP port of Apogee Sound System audio library (AudioLib) used in Build Engin
 
 Can be built with CMake as a static library. Also can be used as a sub-directory to integrate with the target project build.
 
-This version __doesn't__ (yet) supports AWE32, Gravis UltraSound, SoundScape, and Pro Audio Spectrum due to various problems such as:
-- AWE32, GUS, and SoundScape require use of proprietary binary libraries that aren't compatible to DJGPP. However, Gravis Ultrasound libraries are available in the source code form, however, they have GPL incompatible license to be distributed together.
-- Pro Audio Spectrum support is presented, however, I had no hardware or suitable emulator to verify the work of the code.
+This version __doesn't__ (yet) supports AWE32 and Gravis UltraSound because they require use of proprietary binary libraries that aren't compatible to DJGPP. However, Gravis Ultrasound libraries are available in the source code form, however, they have GPL incompatible license to be distributed together.
+
+Also, Pro Audio Spectrum and SoundScape support are presented, however, I had no hardware or suitable emulator to verify the work of their code.
 
 ## This version also has some improvements
 - MIDI synthesizer slightly improved:
