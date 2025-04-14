@@ -33,7 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "djconfig.h"
 
-#define IRQ_NO_SET_VECTOR
+// #define IRQ_NO_SET_VECTOR
 
 enum IRQ_ERRORS
    {
@@ -54,6 +54,11 @@ int IRQ_SetVector
 int IRQ_RestoreVector
    (
    int vector
+   );
+
+void IRQ_Free
+   (
+   void
    );
 #endif
 

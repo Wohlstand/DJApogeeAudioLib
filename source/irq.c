@@ -63,6 +63,7 @@ static DPMI_REGS rmregs = { 0 };
 static void ( __interrupt __far *IRQ_Callback )( void ) = NULL;
 
 static char *IRQ_RealModeCode = NULL;
+static int   IRQ_RealModeCodeDesc = 0;
 
 static unsigned short IRQ_CallBackSegment;
 static unsigned short IRQ_CallBackOffset;
@@ -78,25 +79,32 @@ static struct SREGS SegRegs;
 
 static void *D32DosMemAlloc
    (
+   int *descriptor,
    unsigned long size
    )
 
    {
+   int32_t  segment;
+   int32_t  paragraphs;
    // DPMI allocate DOS memory
-   Regs.d.eax = 0x0100;
+   // Regs.d.eax = 0x0100;
 
    // Number of paragraphs requested
-   Regs.d.ebx = ( size + 15 ) >> 4;
+   paragraphs = (size + 15) / 16;
+   // Regs.d.ebx = ( size + 15 ) >> 4;
 
-   int386( 0x31, &Regs, &Regs );
+   segment = __dpmi_allocate_dos_memory(paragraphs, descriptor);
+   // int386( 0x31, &Regs, &Regs );
 
-   if ( Regs.x.cflag != 0 )
+   // if ( Regs.x.cflag != 0 )
+   if ( segment < 0 )
       {
       // Failed
       return NULL;
       }
 
-   return( ( void * )( ( Regs.d.eax & 0xFFFF ) << 4  ) );
+   // return( ( void * )( ( Regs.d.eax & 0xFFFF ) << 4  ));
+   return (void *)((segment << 4) + __djgpp_conventional_base);
    }
 
 
@@ -105,26 +113,42 @@ static void *D32DosMemAlloc
 // easier to write in C
 // handle 16-bit incoming stack
 
-void fixebp
+__attribute__((always_inline)) inline void fixebp
    (
    void
+   )
+   {
+
+   asm(
+      "mov %%ss, %%bx \n"
+      "lar %%ebx, %%ebx \n"
+      "bt $22, %%ebx \n"
+      "jc bitgstk%= \n"
+      "movzx %%sp, %%esp \n"
+      "mov %%esp, %%ebp \n"
+   "bitgstk%=: \n"
+      :
+      :
+      : "%ebx"
    );
 
-#pragma aux fixebp = \
-        "mov   bx,  ss" \
-        "lar   ebx, ebx" \
-        "bt    ebx, 22" \
-        "jc    bigstk" \
-        "movzx esp, sp" \
-        "mov   ebp, esp" \
-        "bigstk:" \
-modify exact [ ebx ];
+   }
 
-#pragma aux rmcallback parm [];
+// #pragma aux fixebp = \
+//         "mov   bx,  ss" \
+//         "lar   ebx, ebx" \
+//         "bt    ebx, 22" \
+//         "jc    bigstk" \
+//         "movzx esp, sp" \
+//         "mov   ebp, esp" \
+//         "bigstk:" \
+// modify exact [ ebx ];
 
-void rmcallback
+// #pragma aux rmcallback parm [];
+
+static __attribute__((always_inline)) inline void rmcallback
    (
-   unsigned short _far *stkp
+   uint16_t _far *stkp
    )
 
    {
@@ -252,7 +276,7 @@ int IRQ_SetVector
    if ( IRQ_RealModeCode == NULL )
       {
       // Allocate 6 bytes of low memory for real mode interrupt handler
-      IRQ_RealModeCode = D32DosMemAlloc( 6 );
+      IRQ_RealModeCode = D32DosMemAlloc( &IRQ_RealModeCodeDesc, 6 );
       if ( IRQ_RealModeCode == NULL )
          {
          // Free callback
@@ -328,5 +352,14 @@ int IRQ_RestoreVector
       }
 
    return( IRQ_Ok );
+   }
+
+void IRQ_Free()
+   {
+   if (IRQ_RealModeCodeDesc)
+      {
+      __dpmi_free_dos_memory(IRQ_RealModeCodeDesc);
+      IRQ_RealModeCodeDesc = 0;
+      }
    }
 #endif

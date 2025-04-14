@@ -33,8 +33,7 @@ add_library(ass_audio STATIC
     # ------- Junk
     # source/gusmidi2.c   source/gusmidi2.h
     # ------- Junk
-    # source/irq.c
-    source/irq.h        source/interrup.h
+    source/irq.c        source/irq.h        source/interrup.h
     source/ll_man.c     source/ll_man.h     source/linklist.h
     source/_midi.h
     source/midi.c       source/midi.h
