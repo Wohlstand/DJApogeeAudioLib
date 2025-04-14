@@ -19,7 +19,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include <stdio.h>
 #include <stdarg.h>
-#include <stdlib.h>
 #include "debugio.h"
 
 static unsigned short disp_offset = 160 * 24;

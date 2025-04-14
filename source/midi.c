@@ -33,18 +33,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <time.h>
 #include <dos.h>
 #include <string.h>
+#include "djconfig.h"
 #include "sndcards.h"
 #include "interrup.h"
 #include "a_dpmi.h"
 #include "standard.h"
 #include "task_man.h"
-#include "ll_man.h"
+// #include "ll_man.h"
 #include "usrhooks.h"
 #include "music.h"
 #include "_midi.h"
 #include "midi.h"
-#include "debugio.h"
-#include "djconfig.h"
+// #include "debugio.h"
 
 extern int MUSIC_SoundDevice;
 
