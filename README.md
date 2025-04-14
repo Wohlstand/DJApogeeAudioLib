@@ -13,8 +13,11 @@ Also, Pro Audio Spectrum and SoundScape support are presented, however, I had no
   - added suport of CC11-Expression controller.
   - revised the pitch bend formula so it no longer gets messed during a time.
   - On OPL3 chips the Center-Left-Right panning now works as expected (at original version panning didn't used on OPL3 chips).
-
+- Wave support has been improved:
+  - Fixed the support of WAV files with additional and misordered tags.
+  - Stereo files now fully supported!
 
 ## Known bugs
-- Can't correctly play stereo files (the support wasn't be here officially, old readme contains that note)
-- Distorted playback on stereo outputs
+- Can't correctly play stereo files (the support wasn't be here officially, old readme contains that note).
+- Distorted playback on stereo outputs.
+- It's unknown will Pro Audio Spectrum and SoundScape work as code wasn't tested on hardware nor emulator.

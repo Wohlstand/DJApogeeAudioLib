@@ -51,6 +51,7 @@ add_library(ass_audio STATIC
     source/user.c       source/user.h
     source/djconfig.h
 
+    source/mv_mix2c.c
 # Assembly sources
     source/mv_mix.asm
     # source/mv_mix1.asm

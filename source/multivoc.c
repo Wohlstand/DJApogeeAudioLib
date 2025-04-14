@@ -681,22 +681,23 @@ playbackstatus MV_GetNextVOCBlock
                {
                tc = ( unsigned int )*ptr << 8;
                packtype = *( ptr + 1 );
+               samplespeed = (uint16_t)(256000000L / ( 65536 - tc ));
+               voice->channels = 1;
                }
 
             ptr += 2;
             blocklength -= 2;
 
-            samplespeed = 256000000L / ( 65536 - tc );
-
             // Skip packed or stereo data
-            if ( ( packtype != 0 ) || ( voicemode != 0 ) )
-               {
-               ptr += blocklength;
-               }
-            else
-               {
-               done = TRUE;
-               }
+            // if ( ( packtype != 0 ) || ( voicemode != 0 ) )
+            //    {
+            //    ptr += blocklength;
+            //    }
+            // else
+            //    {
+            //    done = TRUE;
+            //    }
+            done = TRUE;
             voicemode = 0;
             break;
 
@@ -764,6 +765,15 @@ playbackstatus MV_GetNextVOCBlock
             tc = *( unsigned short * )ptr;
             packtype = *( ptr + 2 );
             voicemode = *( ptr + 3 );
+            if ( voicemode )
+               {
+               voice->channels = 2;
+               }
+            else
+               {
+               voice->channels = 1;
+               }
+            samplespeed = (256000000L / ( 65536 - tc )) / voice->channels;
             ptr += blocklength;
             break;
 
@@ -780,6 +790,7 @@ playbackstatus MV_GetNextVOCBlock
                ptr         += 12;
                blocklength -= 12;
                voice->bits  = 8;
+               voice->channels = 1;
                done         = TRUE;
                }
             else if ( ( BitsPerSample == 16 ) && ( Channels == 1 ) &&
@@ -788,22 +799,25 @@ playbackstatus MV_GetNextVOCBlock
                ptr         += 12;
                blocklength -= 12;
                voice->bits  = 16;
+               voice->channels = 1;
                done         = TRUE;
                }
             else if ( ( BitsPerSample == 8 ) && ( Channels == 2 ) &&
-               ( Format == VOC_8BIT ) ) // FIXME: Implement true stereo instead of this workaround
+               ( Format == VOC_8BIT ) )
                {
-               ptr         += 24;
-               blocklength -= 24;
+               ptr         += 12;
+               blocklength -= 12;
                voice->bits  = 8;
+               voice->channels = 2;
                done         = TRUE;
                }
             else if ( ( BitsPerSample == 16 ) && ( Channels == 2 ) &&
-               ( Format == VOC_16BIT ) ) // FIXME: Implement true stereo instead of this workaround
+               ( Format == VOC_16BIT ) )
                {
-               ptr         += 24;
-               blocklength -= 24;
+               ptr         += 12;
+               blocklength -= 12;
                voice->bits  = 16;
+               voice->channels = 2;
                done         = TRUE;
                }
             else
@@ -851,6 +865,11 @@ playbackstatus MV_GetNextVOCBlock
          }
 
       if ( voice->bits == 16 )
+         {
+         blocklength /= 2;
+         }
+
+      if ( voice->channels == 2 )
          {
          blocklength /= 2;
          }
@@ -1460,6 +1479,11 @@ static void MV_SetVoiceMixMode
       test |= T_16BITSOURCE;
       }
 
+   if ( voice->channels == 2)
+      {
+      test |= T_STEREOSRC;
+      }
+
    if ( MV_Channels == 1 )
       {
       test |= T_MONO;
@@ -1485,8 +1509,16 @@ static void MV_SetVoiceMixMode
          voice->mix = MV_Mix8BitMono16;
          break;
 
+      case T_8BITS | T_MONO | T_16BITSOURCE | T_STEREOSRC:
+         voice->mix = MV_Mix8BitMono162C;
+         break;
+
       case T_8BITS | T_MONO :
          voice->mix = MV_Mix8BitMono;
+         break;
+
+      case T_8BITS | T_MONO | T_STEREOSRC:
+         voice->mix = MV_Mix8BitMono2C;
          break;
 
       case T_8BITS | T_16BITSOURCE | T_LEFTQUIET :
@@ -1494,33 +1526,67 @@ static void MV_SetVoiceMixMode
          voice->mix = MV_Mix8BitMono16;
          break;
 
+      case T_8BITS | T_16BITSOURCE | T_LEFTQUIET | T_STEREOSRC:
+         MV_LeftVolume = MV_RightVolume;
+         voice->mix = MV_Mix8BitMono162C;
+         break;
+
       case T_8BITS | T_LEFTQUIET :
          MV_LeftVolume = MV_RightVolume;
          voice->mix = MV_Mix8BitMono;
+         break;
+
+      case T_8BITS | T_LEFTQUIET | T_STEREOSRC:
+         MV_LeftVolume = MV_RightVolume;
+         voice->mix = MV_Mix8BitMono2C;
          break;
 
       case T_8BITS | T_16BITSOURCE | T_RIGHTQUIET :
          voice->mix = MV_Mix8BitMono16;
          break;
 
+      case T_8BITS | T_16BITSOURCE | T_RIGHTQUIET | T_STEREOSRC :
+         voice->mix = MV_Mix8BitMono162C;
+         break;
+
       case T_8BITS | T_RIGHTQUIET :
          voice->mix = MV_Mix8BitMono;
+         break;
+
+      case T_8BITS | T_RIGHTQUIET | T_STEREOSRC:
+         voice->mix = MV_Mix8BitMono2C;
          break;
 
       case T_8BITS | T_16BITSOURCE :
          voice->mix = MV_Mix8BitStereo16;
          break;
 
+      case T_8BITS | T_16BITSOURCE | T_STEREOSRC:
+         voice->mix = MV_Mix8BitStereo162C;
+         break;
+
       case T_8BITS :
          voice->mix = MV_Mix8BitStereo;
+         break;
+
+      case T_8BITS | T_STEREOSRC :
+         voice->mix = MV_Mix8BitStereo2C;
          break;
 
       case T_MONO | T_16BITSOURCE :
          voice->mix = MV_Mix16BitMono16;
          break;
 
+      case T_MONO | T_16BITSOURCE | T_STEREOSRC:
+         voice->mix = MV_Mix16BitMono162C;
+         break;
+
       case T_MONO :
          voice->mix = MV_Mix16BitMono;
+         break;
+
+      case T_MONO | T_STEREOSRC:
+         voice->mix = MV_Mix16BitMono2C;
          break;
 
       case T_16BITSOURCE | T_LEFTQUIET :
@@ -1528,25 +1594,51 @@ static void MV_SetVoiceMixMode
          voice->mix = MV_Mix16BitMono16;
          break;
 
+      case T_16BITSOURCE | T_LEFTQUIET | T_STEREOSRC:
+         MV_LeftVolume = MV_RightVolume;
+         voice->mix = MV_Mix16BitMono162C;
+         break;
+
       case T_LEFTQUIET :
          MV_LeftVolume = MV_RightVolume;
          voice->mix = MV_Mix16BitMono;
+         break;
+
+      case T_LEFTQUIET | T_STEREOSRC:
+         MV_LeftVolume = MV_RightVolume;
+         voice->mix = MV_Mix16BitMono2C;
          break;
 
       case T_16BITSOURCE | T_RIGHTQUIET :
          voice->mix = MV_Mix16BitMono16;
          break;
 
+      case T_16BITSOURCE | T_RIGHTQUIET | T_STEREOSRC:
+         voice->mix = MV_Mix16BitMono162C;
+         break;
+
       case T_RIGHTQUIET :
          voice->mix = MV_Mix16BitMono;
+         break;
+
+      case T_RIGHTQUIET | T_STEREOSRC:
+         voice->mix = MV_Mix16BitMono2C;
          break;
 
       case T_16BITSOURCE :
          voice->mix = MV_Mix16BitStereo16;
          break;
 
+      case T_16BITSOURCE | T_STEREOSRC:
+         voice->mix = MV_Mix16BitStereo162C;
+         break;
+
       case T_SIXTEENBIT_STEREO :
          voice->mix = MV_Mix16BitStereo;
+         break;
+
+      case T_SIXTEENBIT_STEREO | T_STEREOSRC:
+         voice->mix = MV_Mix16BitStereo2C;
          break;
 
       default :
@@ -2256,6 +2348,7 @@ int MV_StartDemandFeedPlayback
 
    voice->wavetype    = DemandFeed;
    voice->bits        = 8;
+   voice->channels    = 1;
    voice->GetSound    = MV_GetNextDemandFeedBlock;
    voice->NextBlock   = NULL;
    voice->DemandFeed  = function;
@@ -2351,6 +2444,7 @@ int MV_PlayLoopedRaw
 
    voice->wavetype    = Raw;
    voice->bits        = 8;
+   voice->channels    = 1;
    voice->GetSound    = MV_GetNextRawBlock;
    voice->Playing     = TRUE;
    voice->NextBlock   = ptr;
@@ -2475,9 +2569,11 @@ unsigned long callbackval
 
    {
    riff_header   *riff;
+   uint8_t       *end, *cur;
    format_header *format;
    data_header   *data;
    VoiceNode     *voice;
+   uint32_t      block_size;
    int length;
    int absloopend;
    int absloopstart;
@@ -2491,15 +2587,54 @@ unsigned long callbackval
    riff = ( riff_header * )ptr;
 
    if ( ( strncmp( riff->RIFF, "RIFF", 4 ) != 0 ) ||
-      ( strncmp( riff->WAVE, "WAVE", 4 ) != 0 ) ||
-      ( strncmp( riff->fmt, "fmt ", 4) != 0 ) )
+      ( strncmp( riff->WAVE, "WAVE", 4 ) != 0 ) )
       {
       MV_SetErrorCode( MV_InvalidWAVFile );
       return( MV_Error );
       }
 
-   format = ( format_header * )( riff + 1 );
-   data   = ( data_header * )( ( ( char * )format ) + riff->format_size );
+   // format = ( format_header * )( riff + 1 );
+   // data   = ( data_header * )( ( ( char * )format ) + riff->format_size );
+
+   end = ptr + riff->file_size;
+   cur = ptr + 12;
+
+   format = NULL;
+   data = NULL;
+
+   while(cur < end)
+      {
+      block_size = (uint32_t)*(cur + 4);
+
+      if ( !memcmp(cur, "fmt ", 4) )
+         {
+            format = ( format_header *)(cur + 8);
+         }
+
+      else if ( !memcmp(cur, "data", 4) )
+         {
+            data = ( data_header *)(cur);
+         }
+
+      cur += block_size + 8;
+      /* RIFF chunks have a 2-byte alignment. Skip padding byte. */
+      if (block_size & 1)
+         {
+         ++cur;
+         }
+      }
+
+   if ( !format )
+      {
+      MV_SetErrorCode( MV_InvalidWAVFile );
+      return( MV_Error );
+      }
+
+   if ( !data )
+      {
+      MV_SetErrorCode( MV_InvalidWAVFile );
+      return( MV_Error );
+      }
 
    // Check if it's PCM data.
    if ( format->wFormatTag != 1 )
@@ -2508,7 +2643,7 @@ unsigned long callbackval
       return( MV_Error );
       }
 
-   if ( format->nChannels != 1 )
+   if ( format->nChannels != 1 && format->nChannels != 2 )
       {
       MV_SetErrorCode( MV_InvalidWAVFile );
       return( MV_Error );
@@ -2537,12 +2672,21 @@ unsigned long callbackval
 
    voice->wavetype    = WAV;
    voice->bits        = format->nBitsPerSample;
+   voice->channels    = format->nChannels;
    voice->GetSound    = MV_GetNextWAVBlock;
 
    length = data->size;
    absloopstart = loopstart;
    absloopend   = loopend;
    if ( voice->bits == 16 )
+      {
+      loopstart  *= 2;
+      data->size &= ~1;
+      loopend    *= 2;
+      length     /= 2;
+      }
+
+   if ( voice->channels == 2 )
       {
       loopstart  *= 2;
       data->size &= ~1;
@@ -2712,6 +2856,7 @@ int MV_PlayLoopedVOC
 
    voice->wavetype    = VOC;
    voice->bits        = 8;
+   voice->channels    = 1;
    voice->GetSound    = MV_GetNextVOCBlock;
    voice->NextBlock   = (uint8_t*)ptr + *( unsigned short int * )( ptr + 0x14 );
    voice->DemandFeed  = NULL;

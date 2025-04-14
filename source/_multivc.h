@@ -51,6 +51,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define T_16BITSOURCE 4
 #define T_LEFTQUIET   8
 #define T_RIGHTQUIET  16
+#define T_STEREOSRC   32
 #define T_DEFAULT     T_SIXTEENBIT_STEREO
 
 #define MV_MaxPanPosition  31
@@ -97,6 +98,7 @@ typedef struct VoiceNode
 
    wavedata      wavetype;
    char          bits;
+   char          channels;
 
    playbackstatus ( *GetSound )( struct VoiceNode *voice );
 
@@ -293,5 +295,17 @@ extern void MV_8BitReverb(void);
 extern void MV_16BitReverbFast(void);
 extern void MV_8BitReverbFast(void);
 #endif
+
+// Stereo sources
+
+void MV_Mix8BitMono2C( unsigned long position, unsigned long rate, uint8_t *start, unsigned long length );
+void MV_Mix8BitStereo2C( unsigned long position, unsigned long rate, uint8_t *start, unsigned long length );
+void MV_Mix16BitMono2C( unsigned long position, unsigned long rate, uint8_t *start, unsigned long length );
+void MV_Mix16BitStereo2C( unsigned long position, unsigned long rate, uint8_t *start, unsigned long length );
+
+void MV_Mix8BitMono162C( unsigned long position, unsigned long rate, uint8_t *start, unsigned long length );
+void MV_Mix8BitStereo162C( unsigned long position, unsigned long rate, uint8_t *start, unsigned long length );
+void MV_Mix16BitMono162C( unsigned long position, unsigned long rate, uint8_t *start, unsigned long length );
+void MV_Mix16BitStereo162C( unsigned long position, unsigned long rate, uint8_t *start, unsigned long length );
 
 #endif
