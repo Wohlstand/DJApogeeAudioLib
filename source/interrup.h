@@ -31,13 +31,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef __INTERRUPT_H
 #define __INTERRUPT_H
 
-#include <stdio.h>
 #include <stdint.h>
 
-static uint32_t DisableInterrupts(void);
-static void RestoreInterrupts(uint32_t flags);
+// static uint32_t DisableInterrupts(void);
+// static void RestoreInterrupts(uint32_t flags);
 
-static uint32_t DisableInterrupts(void)
+static __attribute__((always_inline)) inline uint32_t DisableInterrupts(void)
 {
     uint32_t a;
     asm
@@ -50,7 +49,7 @@ static uint32_t DisableInterrupts(void)
     return a;
 }
 
-static void RestoreInterrupts(uint32_t flags)
+static __attribute__((always_inline)) inline void RestoreInterrupts(uint32_t flags)
 {
     asm
     (
