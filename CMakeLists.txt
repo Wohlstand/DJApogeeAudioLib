@@ -20,20 +20,12 @@ add_library(ass_audio STATIC
     source/al_midi.c    source/al_midi.h
     source/a_assert.h
     # source/awe32.c      source/awe32.h    # Missing external libraries
-    # source/ctaweapi.h source/ctaweapi.inc
-    source/_blaster.h
-    source/blaster.c
-    source/blaster.h
-    # ------- Junk
-    # source/blastold.c
-    # ------- Junk
+    source/blaster.c    source/blaster.h    source/_blaster.h
     source/debugio.c    source/debugio.h
     source/dma.c        source/dma.h
     source/a_dpmi.c     source/a_dpmi.h
     source/fx_man.c     include/fx_man.h
-    # source/gmtemp.c
     source/gmtimbre.c
-    # source/gmtmbold.c
     # source/gus.c      # Missing external libraries for GUS support
     # source/gusmidi.c    source/gusmidi.h    source/_guswave.h
     # source/guswave.c    source/guswave.h
@@ -43,28 +35,17 @@ add_library(ass_audio STATIC
     # ------- Junk
     # source/irq.c
     source/irq.h        source/interrup.h
-    # ------- Junk
-    # source/leeold.c
-    # source/leetimb1.c
-    # source/leetimbr.c
-    # source/oldtimbr.c
-    # ------- Junk
     source/ll_man.c     source/ll_man.h     source/linklist.h
-    # source/memcheck.h
     source/_midi.h
     source/midi.c       source/midi.h
     source/mpu401.c     source/mpu401.h
     source/multivoc.c   source/multivoc.h   source/_multivc.h
     source/music.c      include/music.h
-    # ------- Junk
-    # source/mv1.c
-    # source/myprint.c source/myprint.h
-    # ------- Junk
-    source/pas16.c source/pas16.h source/_pas16.h
+    source/pas16.c      source/pas16.h      source/_pas16.h
     source/pcfx.c       source/pcfx.h
     source/pitch.c      source/pitch.h
     include/sndcards.h
-    # source/sndscape.c source/sndscape.h source/_sndscap.h  # Missing external libraries
+    source/sndscape.c   source/sndscape.h   source/_sndscap.h
     source/sndsrc.c     source/sndsrc.h
     source/standard.h
     source/task_man.c   include/task_man.h
@@ -84,7 +65,7 @@ add_library(ass_audio STATIC
     source/multvcas.c
 )
 
-target_compile_definitions(ass_audio PRIVATE -DULTRASOUND_OFF -DAWE32_OFF -DSOUNDSCAPE_OFF)
+target_compile_definitions(ass_audio PRIVATE -DULTRASOUND_OFF -DAWE32_OFF)
 
 target_include_directories(ass_audio PUBLIC include)
 target_include_directories(ass_audio PRIVATE include/usrhooks)

@@ -31,6 +31,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef __SNDSCAPE_H
 #define __SNDSCAPE_H
 
+#include <stdint.h>
+
 extern int SOUNDSCAPE_DMAChannel;
 extern int SOUNDSCAPE_ErrorCode;
 
@@ -63,7 +65,7 @@ unsigned SOUNDSCAPE_GetPlaybackRate( void );
 int      SOUNDSCAPE_SetMixMode( int mode );
 void     SOUNDSCAPE_StopPlayback( void );
 int      SOUNDSCAPE_GetCurrentPos( void );
-int      SOUNDSCAPE_BeginBufferedPlayback( char *BufferStart, int BufferSize, int NumDivisions, unsigned SampleRate, int MixMode, void ( *CallBackFunc )( void ) );
+int      SOUNDSCAPE_BeginBufferedPlayback( uint8_t *BufferStart, int BufferSize, int NumDivisions, unsigned SampleRate, int MixMode, void ( *CallBackFunc )( void ) );
 int      SOUNDSCAPE_GetCardInfo( int *MaxSampleBits, int *MaxChannels );
 void     SOUNDSCAPE_SetCallBack( void ( *func )( void ) );
 int      SOUNDSCAPE_GetMIDIPort( void );

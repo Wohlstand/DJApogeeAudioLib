@@ -31,6 +31,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef ___SNDSCAP_H
 #define ___SNDSCAP_H
 
+#include <stdint.h>
+#include <stdio.h>
+
 #define VALID   ( 1 == 1 )
 #define INVALID ( !VALID )
 
@@ -115,14 +118,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 static void SOUNDSCAPE_EnableInterrupt( void );
 static void SOUNDSCAPE_DisableInterrupt( void );
-static void __interrupt __far SOUNDSCAPE_ServiceInterrupt( void );
+// static void __interrupt __far SOUNDSCAPE_ServiceInterrupt( void );
 static int  ga_read( int rnum );
 static void ga_write( int rnum, int value );
 static int  ad_read( int rnum );
 static void ad_write( int rnum, int value );
 static void tdelay( void );
 static void pcm_format( void );
-static int  SOUNDSCAPE_SetupDMABuffer( char *BufferPtr, int BufferSize, int mode );
+static int  SOUNDSCAPE_SetupDMABuffer(uint8_t *BufferPtr, int BufferSize, int mode );
 static int  SOUNDSCAPE_BeginPlayback( int length );
 static void SOUNDSCAPE_LockEnd( void );
 static void SOUNDSCAPE_UnlockMemory( void );

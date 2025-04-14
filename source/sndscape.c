@@ -65,9 +65,9 @@ static void ( __interrupt __far *SOUNDSCAPE_OldInt )( void );
 static int SOUNDSCAPE_Installed = FALSE;
 static int SOUNDSCAPE_FoundCard = FALSE;
 
-static char   *SOUNDSCAPE_DMABuffer;
-static char   *SOUNDSCAPE_DMABufferEnd;
-static char   *SOUNDSCAPE_CurrentDMABuffer;
+static uint8_t*SOUNDSCAPE_DMABuffer;
+static uint8_t*SOUNDSCAPE_DMABufferEnd;
+static uint8_t*SOUNDSCAPE_CurrentDMABuffer;
 static int     SOUNDSCAPE_TotalDMABufferSize;
 
 static int      SOUNDSCAPE_TransferLength   = 0;
@@ -108,27 +108,46 @@ static unsigned long  oldStackPointer;
 
 // These declarations are necessary to use the inline assembly pragmas.
 
-#ifdef USESTACK
-extern void GetStack(unsigned short *selptr,unsigned long *stackptr);
-extern void SetStack(unsigned short selector,unsigned long stackptr);
-
 // This function will get the current stack selector and pointer and save
 // them off.
-#pragma aux GetStack =	\
-	"mov  [edi],esp"		\
-	"mov	ax,ss"	 		\
-	"mov  [esi],ax" 		\
-	parm [esi] [edi]		\
-	modify [eax esi edi];
+static __attribute__((always_inline)) inline void GetStack(uint16_t *selptr, uint32_t *stackptr)
+{
+   asm
+   (
+      "mov %%esp, %1 \n"
+      "mov %%ss, %%ax \n"
+      "mov %%ax, %0 \n"
+      : "=a"(*selptr), "=b"(*stackptr)
+      :
+      : "%esi", "%edi"
+   );
+}
+// #pragma aux GetStack =	\
+// 	"mov  [edi],esp"		\
+// 	"mov	ax,ss"	 		\
+// 	"mov  [esi],ax" 		\
+// 	parm [esi] [edi]		\
+// 	modify [eax esi edi];
 
-This function will set the stack selector and pointer to the specified
-values.
-#pragma aux SetStack =	\
-	"mov  ss,ax"			\
-	"mov  esp,edx"			\
-	parm [ax] [edx]		\
-	modify [eax edx];
-#endif
+
+// This function will set the stack selector and pointer to the specified
+// values.
+static __attribute__((always_inline)) inline void SetStack(uint16_t selector, uint32_t stackptr)
+{
+   asm
+   (
+      "mov %0, %%ss \n"
+      "mov %1, %%esp\n"
+      :
+      : "a"(selector), "b"(stackptr)
+   );
+}
+
+// #pragma aux SetStack =	\
+// 	"mov  ss,ax"			\
+// 	"mov  esp,edx"			\
+// 	parm [ax] [edx]		\
+// 	modify [eax edx];
 
 int SOUNDSCAPE_DMAChannel = -1;
 
@@ -651,7 +670,7 @@ void SOUNDSCAPE_StopPlayback
 
 static int SOUNDSCAPE_SetupDMABuffer
    (
-   char *BufferPtr,
+   uint8_t *BufferPtr,
    int   BufferSize,
    int   mode
    )
@@ -688,7 +707,7 @@ int SOUNDSCAPE_GetCurrentPos
    )
 
    {
-   char *CurrentAddr;
+   uint8_t *CurrentAddr;
    int   offset;
 
    if ( !SOUNDSCAPE_SoundPlaying )
@@ -779,7 +798,7 @@ static int SOUNDSCAPE_BeginPlayback
 
 int SOUNDSCAPE_BeginBufferedPlayback
    (
-   char    *BufferStart,
+   uint8_t *BufferStart,
    int      BufferSize,
    int      NumDivisions,
    unsigned SampleRate,
@@ -1462,12 +1481,12 @@ static int SOUNDSCAPE_Setup
 
    // Install our interrupt handler
    Interrupt = SOUNDSCAPE_Interrupts[ SOUNDSCAPE_Config.WaveIRQ ];
-   // SOUNDSCAPE_OldInt = _dos_getvect( Interrupt );
+   replaceInterrupt(SOUNDSCAPE_OldInt, SOUNDSCAPE_NewInt, Interrupt, SOUNDSCAPE_ServiceInterrupt);
+#if 0
+   SOUNDSCAPE_OldInt = _dos_getvect( Interrupt );
    if ( SOUNDSCAPE_Config.WaveIRQ < 8 )
       {
-      // FIXME: Ensure it's valid!
-        replaceInterrupt(SOUNDSCAPE_OldInt, SOUNDSCAPE_NewInt, Interrupt, SOUNDSCAPE_ServiceInterrupt);
-      // _dos_setvect( Interrupt, SOUNDSCAPE_ServiceInterrupt );
+      _dos_setvect( Interrupt, SOUNDSCAPE_ServiceInterrupt );
       }
    else
       {
@@ -1478,6 +1497,7 @@ static int SOUNDSCAPE_Setup
          return( SOUNDSCAPE_Error );
          }
       }
+#endif
 
 	// max left and right volumes
 	ad_write( AD_LEFTOUT, 0 );
@@ -1645,12 +1665,12 @@ void SOUNDSCAPE_Shutdown
 
    // Restore the original interrupt
    Interrupt = SOUNDSCAPE_Interrupts[ SOUNDSCAPE_Config.WaveIRQ ];
-   if ( SOUNDSCAPE_Config.WaveIRQ >= 8 )
-      {
-      IRQ_RestoreVector( Interrupt );
-      }
-   restoreInterrupt(Interrupt, SOUNDSCAPE_OldInt, SOUNDSCAPE_NewInt);
+   // if ( SOUNDSCAPE_Config.WaveIRQ >= 8 )
+   //    {
+   //    IRQ_RestoreVector( Interrupt );
+   //    }
    // _dos_setvect( Interrupt, SOUNDSCAPE_OldInt );
+   restoreInterrupt(Interrupt, SOUNDSCAPE_OldInt, SOUNDSCAPE_NewInt);
 
    SOUNDSCAPE_SoundPlaying = FALSE;
 
