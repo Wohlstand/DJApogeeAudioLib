@@ -166,8 +166,11 @@ static int irqstatus;
 
 // This function will get the current stack selector and pointer and save
 // them off.
-static __attribute__((always_inline)) inline void GetStack(uint16_t *selptr, uint32_t *stackptr)
-{
+static __attribute__((always_inline)) inline void GetStack
+   (
+   uint16_t *selptr, uint32_t *stackptr
+   )
+   {
    asm
    (
       "mov %%esp, %1 \n"
@@ -177,7 +180,7 @@ static __attribute__((always_inline)) inline void GetStack(uint16_t *selptr, uin
       :
       : "%esi", "%edi"
    );
-}
+   }
 // #pragma aux GetStack =	\
 // 	"mov  [edi],esp"		\
 // 	"mov	ax,ss"	 		\
@@ -188,8 +191,11 @@ static __attribute__((always_inline)) inline void GetStack(uint16_t *selptr, uin
 
 // This function will set the stack selector and pointer to the specified
 // values.
-static __attribute__((always_inline)) inline void SetStack(uint16_t selector, uint32_t stackptr)
-{
+static __attribute__((always_inline)) inline void SetStack
+   (
+   uint16_t selector, uint32_t stackptr
+   )
+   {
    asm
    (
       "mov %0, %%ss \n"
@@ -197,7 +203,7 @@ static __attribute__((always_inline)) inline void SetStack(uint16_t selector, ui
       :
       : "a"(selector), "b"(stackptr)
    );
-}
+   }
 
 // #pragma aux SetStack =	\
 // 	"mov  ss,ax"			\

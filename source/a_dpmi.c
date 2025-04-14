@@ -121,26 +121,36 @@ int DPMI_CallRealModeFunction
    return( DPMI_Ok );
    }
 
-int  DPMI_GetDOSMemory( void **ptr, int *descriptor, unsigned length )
-{
-    int32_t  segment;
-    int32_t  paragraphs;
+int  DPMI_GetDOSMemory
+   (
+   void **ptr, int *descriptor, unsigned length
+   )
 
-    paragraphs = (length + 15) / 16;
+   {
+   int32_t  segment;
+   int32_t  paragraphs;
 
-    segment = __dpmi_allocate_dos_memory(paragraphs, descriptor);
-    if(segment < 0)
-        return DPMI_Error;
+   paragraphs = (length + 15) / 16;
 
-    *ptr = (uint8_t *)((segment << 4) + __djgpp_conventional_base);
+   segment = __dpmi_allocate_dos_memory(paragraphs, descriptor);
+   if ( segment < 0 )
+      {
+      return( DPMI_Error );
+      }
 
-    return DPMI_Ok;
-}
+   *ptr = (uint8_t *)((segment << 4) + __djgpp_conventional_base);
 
-int  DPMI_FreeDOSMemory( int descriptor )
-{
-    return __dpmi_free_dos_memory(descriptor);
-}
+   return( DPMI_Ok );
+   }
+
+int  DPMI_FreeDOSMemory
+   (
+   int descriptor
+   )
+
+   {
+   return( __dpmi_free_dos_memory(descriptor) );
+   }
 
 
 /*---------------------------------------------------------------------
