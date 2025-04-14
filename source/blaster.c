@@ -41,7 +41,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "blaster.h"
 #include "_blaster.h"
 
-// #define USESTACK
+#define USESTACK
 
 const int BLASTER_Interrupts[ BLASTER_MaxIrq + 1 ]  =
    {
@@ -117,11 +117,13 @@ static int BLASTER_WaveBlasterState = 0x0F;
 // adequate stack size
 #define kStackSize 2048
 
-// static unsigned short StackSelector = 0;
-// static unsigned long  StackPointer;
+#ifdef USESTACK
+static uint16_t StackSelector = 0;
+static uint32_t StackPointer;
 
-// static unsigned short oldStackSelector;
-// static unsigned long  oldStackPointer;
+static uint16_t oldStackSelector;
+static uint32_t oldStackPointer;
+#endif
 
 // This is defined because we can't create local variables in a
 // function that switches stacks.
@@ -129,25 +131,48 @@ static int GlobalStatus = 0;
 
 // These declarations are necessary to use the inline assembly pragmas.
 
-// extern void GetStack(unsigned short *selptr,unsigned long *stackptr);
-// extern void SetStack(unsigned short selector,unsigned long stackptr);
+#ifdef USESTACK
+// This function will get the current stack selector and pointer and save
+// them off.
+static __attribute__((always_inline)) inline void GetStack(uint16_t *selptr, uint32_t *stackptr)
+{
+   asm
+   (
+      "mov %%esp, %1 \n"
+      "mov %%ss, %%ax \n"
+      "mov %%ax, %0 \n"
+      : "=a"(*selptr), "=b"(*stackptr)
+      :
+      : "%esi", "%edi"
+   );
+}
+// #pragma aux GetStack =	\
+// 	"mov  [edi],esp"		\
+// 	"mov	ax,ss"	 		\
+// 	"mov  [esi],ax" 		\
+// 	parm [esi] [edi]		\
+// 	modify [eax esi edi];
 
-// // This function will get the current stack selector and pointer and save
-// // them off.
-// #pragma aux GetStack =  \
-//    "mov  [edi],esp"     \
-//    "mov  ax,ss"         \
-//    "mov  [esi],ax"      \
-//    parm [esi] [edi]     \
-//    modify [eax esi edi];
 
-// // This function will set the stack selector and pointer to the specified
-// // values.
-// #pragma aux SetStack =  \
-//    "mov  ss,ax"         \
-//    "mov  esp,edx"       \
-//    parm [ax] [edx]      \
-//    modify [eax edx];
+// This function will set the stack selector and pointer to the specified
+// values.
+static __attribute__((always_inline)) inline void SetStack(uint16_t selector, uint32_t stackptr)
+{
+   asm
+   (
+      "mov %0, %%ss \n"
+      "mov %1, %%esp\n"
+      :
+      : "a"(selector), "b"(stackptr)
+   );
+}
+
+// #pragma aux SetStack =	\
+// 	"mov  ss,ax"			\
+// 	"mov  esp,edx"			\
+// 	parm [ax] [edx]		\
+// 	modify [eax edx];
+#endif
 
 int BLASTER_DMAChannel = 0;
 
@@ -391,7 +416,6 @@ static void __interrupt __far BLASTER_ServiceInterrupt
       inp( BLASTER_Config.Address + BLASTER_DataAvailablePort );
       }
 
-
    // Keep track of current buffer
    BLASTER_CurrentDMABuffer += BLASTER_TransferLength;
 
@@ -413,7 +437,6 @@ static void __interrupt __far BLASTER_ServiceInterrupt
          BLASTER_DSP1xx_BeginRecord( BLASTER_TransferLength );
          }
       }
-
 
    // Call the caller's callback function
    if ( BLASTER_CallBack != NULL )
@@ -2259,16 +2282,18 @@ int BLASTER_Init
          return( status );
          }
 
-      // StackSelector = allocateTimerStack( kStackSize );
-      // if ( StackSelector == 0 )
-      //    {
-      //    BLASTER_UnlockMemory();
-      //    BLASTER_SetErrorCode( BLASTER_OutOfMemory );
-      //    return( BLASTER_Error );
-      //    }
+      #ifdef USESTACK
+      StackSelector = allocateTimerStack( kStackSize );
+      if ( StackSelector == 0 )
+         {
+         BLASTER_UnlockMemory();
+         BLASTER_SetErrorCode( BLASTER_OutOfMemory );
+         return( BLASTER_Error );
+         }
 
       // Leave a little room at top of stack just for the hell of it...
-      // StackPointer = kStackSize - sizeof( long );
+      StackPointer = kStackSize - sizeof( long );
+      #endif
 
       replaceInterrupt(BLASTER_OldInt, BLASTER_NewInt, Interrupt, BLASTER_ServiceInterrupt);
 #if 0
@@ -2342,8 +2367,10 @@ void BLASTER_Shutdown
 
    BLASTER_UnlockMemory();
 
-   // deallocateTimerStack( StackSelector );
-   // StackSelector = 0;
+   #ifdef USESTACK
+   deallocateTimerStack( StackSelector );
+   StackSelector = 0;
+   #endif
 
    BLASTER_Installed = FALSE;
    }
