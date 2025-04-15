@@ -218,8 +218,8 @@ int main
               "Press ESCape to end.\n\n" );
 
       MUSIC_GetSongLength( &pos );
-      printf( "Song length: time (m:s:ms) = %d:%d:%d, "
-         "(measure:beat:tick) = %d:%d:%d\n\n",
+      printf( "Song length: time (m:s:ms) = %lu:%lu:%lu, "
+         "(measure:beat:tick) = %u:%u:%u\n\n",
          pos.milliseconds / (60*1000),
          ( pos.milliseconds / 1000 ) % 60,
          pos.milliseconds % 1000,
@@ -230,7 +230,7 @@ int main
       while( ch != 27 )
          {
          MUSIC_GetSongPosition( &pos );
-         printf( "time (m:s:ms) = %d:%d:%d     \t(measure:beat:tick) = %d:%d:%d          \r",
+         printf( "time (m:s:ms) = %lu:%lu:%lu     \t(measure:beat:tick) = %d:%d:%d          \r",
             pos.milliseconds / (60*1000),
             ( pos.milliseconds / 1000 ) % 60,
             pos.milliseconds % 1000,
