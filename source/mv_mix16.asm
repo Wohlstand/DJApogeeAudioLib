@@ -218,14 +218,14 @@ _MV_Mix8BitStereo16:
         mov     [eax],edx
 
         ; Harsh Clip table ptr
-        mov     ebx, _MV_HarshClipTable
+        mov     ebx, [_MV_HarshClipTable]
         add     ebx,128
         mov     eax,bpatch4+2            ; convice tasm to modify code...
         mov     [eax],ebx
         mov     eax,bpatch5+2            ; convice tasm to modify code...
         mov     [eax],ebx
 
-        mov     edi, _MV_MixDestination         ; Get the position to write to
+        mov     edi, [_MV_MixDestination]         ; Get the position to write to
 
         ; Number of samples to mix
         mov     ecx, [_MV_Length]
