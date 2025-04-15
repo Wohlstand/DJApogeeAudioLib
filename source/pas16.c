@@ -1197,10 +1197,10 @@ int PAS_BeginBufferedRecord
    Calls interrupt 2fh.
 ---------------------------------------------------------------------*/
 
-int PAS_CallInt( int ebx, int ecx, int edx );
-#pragma aux PAS_CallInt = \
-   "int 2fh",         \
-   parm [ ebx ] [ ecx ] [ edx ] modify exact [ eax ebx ecx edx esi edi ] value [ ebx ];
+// int PAS_CallInt( int ebx, int ecx, int edx );
+// #pragma aux PAS_CallInt = \
+//    "int 2fh",         \
+//    parm [ ebx ] [ ecx ] [ edx ] modify exact [ eax ebx ecx edx esi edi ] value [ ebx ];
 
 
 /*---------------------------------------------------------------------
