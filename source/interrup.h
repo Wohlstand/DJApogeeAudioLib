@@ -36,28 +36,37 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // static uint32_t DisableInterrupts(void);
 // static void RestoreInterrupts(uint32_t flags);
 
-static __attribute__((always_inline)) inline uint32_t DisableInterrupts(void)
-{
-    uint32_t a;
-    asm
-    (
-        "pushfl \n"
-        "popl %0 \n"
-        "cli"
-        : "=r" (a)
-    );
-    return a;
-}
+static __attribute__((always_inline)) inline uint32_t DisableInterrupts
+   (
+   void
+   )
 
-static __attribute__((always_inline)) inline void RestoreInterrupts(uint32_t flags)
-{
-    asm
-    (
-        "pushl %0 \n"
-        "popfl"
-        :
-        : "r" (flags)
-    );
-}
+   {
+   uint32_t a;
+   asm
+   (
+      "pushfl \n"
+      "popl %0 \n"
+      "cli"
+      : "=r" (a)
+   );
+
+   return a;
+   }
+
+static __attribute__((always_inline)) inline void RestoreInterrupts
+   (
+   uint32_t flags
+   )
+
+   {
+   asm
+   (
+      "pushl %0 \n"
+      "popfl"
+      :
+      : "r" (flags)
+   );
+   }
 
 #endif

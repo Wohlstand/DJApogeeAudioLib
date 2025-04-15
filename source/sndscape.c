@@ -114,6 +114,7 @@ static __attribute__((always_inline)) inline void GetStack
    (
    uint16_t *selptr, uint32_t *stackptr
    )
+
    {
    asm
    (
@@ -139,6 +140,7 @@ static __attribute__((always_inline)) inline void SetStack
    (
    uint16_t selector, uint32_t stackptr
    )
+
    {
    asm
    (

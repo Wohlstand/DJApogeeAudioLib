@@ -18,7 +18,16 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
-/* Mixer functions to handle stereo inputs */
+/**********************************************************************
+   module: MV_MIX2C.C
+
+   author: Novichkov Vitaliy Dmitriyevich
+   date:   15'th of April, 2025
+
+   Mixer functions to support stereo files.
+
+   (c) Copyright 2025-2025 Novichkov Vitaliy Dmitriyevich
+**********************************************************************/
 
 #include "_multivc.h"
 

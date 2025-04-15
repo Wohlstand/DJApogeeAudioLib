@@ -60,12 +60,12 @@ int DMA_VerifyChannel
    );
 
 int DMA_SetupTransfer
-(
-int  channel,
-uint8_t *address,
-int  length,
-int  mode
-);
+   (
+   int  channel,
+   uint8_t *address,
+   int  length,
+   int  mode
+   );
 
 int DMA_EndTransfer
    (
@@ -73,9 +73,9 @@ int DMA_EndTransfer
    );
 
 uint8_t *DMA_GetCurrentPos
-(
-int32_t channel
-);
+   (
+   int32_t channel
+   );
 
 int DMA_GetTransferCount
    (

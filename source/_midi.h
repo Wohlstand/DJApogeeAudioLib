@@ -31,6 +31,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef ___MIDI_H
 #define ___MIDI_H
 
+#include <stddef.h>
+
 #define RELATIVE_BEAT( measure, beat, tick ) \
    ( ( tick ) + ( ( beat ) << 9 ) + ( ( measure ) << 16 ) )
 
@@ -148,6 +150,8 @@ typedef struct
    char           EMIDI_ProgramChange;
    char           EMIDI_VolumeChange;
    } track;
+
+typedef struct task task;
 
 static long _MIDI_ReadNumber( void *from, size_t size );
 static long _MIDI_ReadDelta( track *ptr );

@@ -1,3 +1,35 @@
+/*
+Copyright (C) 1994-1995 Apogee Software, Ltd.
+Copyright (C) 2025-2025 Vitaliy Novichkov <admin@wohlnet,ru>
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+*/
+
+/**********************************************************************
+   module: MULTIVCAS.C
+
+   author: Novichkov Vitaliy Dmitriyevich
+   date:   15'th of April, 2025
+
+   Mixer functions Wrapper to run assembly functions without arguments
+   and send data via provided global variables.
+
+   (c) Copyright 2025-2025 Novichkov Vitaliy Dmitriyevich
+**********************************************************************/
+
 #include <stddef.h>
 #include <stdint.h>
 
@@ -8,11 +40,14 @@ void ClearBuffer_DW
    (
    void *ptr, unsigned data, int length
    )
+
    {
    int32_t i;
 
-   for ( i = 0; i < length; i++ )
+   for( i = 0; i < length; i++ )
+      {
       ((uint32_t *)ptr)[i] = data;
+      }
 
    }
 
@@ -24,9 +59,10 @@ uint32_t MV_Length      __attribute__ ((externally_visible)) = 0;
 
 #define MixFunction(x)   \
 void x##_Wrapper \
-   (\
+   ( \
    unsigned long position, unsigned long rate, uint8_t *start, unsigned long length \
    ) \
+\
    { \
    MV_Position = position; \
    MV_Rate = rate; \
@@ -58,6 +94,7 @@ void MV_16BitReverb_Wrapper
    (
    uint8_t *src, uint8_t *dest, VOLUME16 *volume, int count
    )
+
    {
    MV_Src = src;
    MV_Dest = dest;
@@ -67,10 +104,12 @@ void MV_16BitReverb_Wrapper
    MV_16BitReverb();
    }
 
+
 void MV_8BitReverb_Wrapper
    (
    uint8_t *src, uint8_t *dest, VOLUME16 *volume, int count
    )
+
    {
    MV_Src = src;
    MV_Dest = dest;
@@ -80,10 +119,12 @@ void MV_8BitReverb_Wrapper
    MV_8BitReverb();
    }
 
+
 void MV_16BitReverbFast_Wrapper
    (
    uint8_t *src, uint8_t *dest, int count, int shift
    )
+
    {
    MV_Src = src;
    MV_Dest = dest;
@@ -93,10 +134,12 @@ void MV_16BitReverbFast_Wrapper
    MV_16BitReverbFast();
    }
 
+
 void MV_8BitReverbFast_Wrapper
    (
    uint8_t *src, uint8_t *dest, int count, int shift
    )
+
    {
    MV_Src = src;
    MV_Dest = dest;

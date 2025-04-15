@@ -2602,7 +2602,7 @@ unsigned long callbackval
    format = NULL;
    data = NULL;
 
-   while(cur < end)
+   while ( cur < end )
       {
       block_size = (uint32_t)*(cur + 4);
 

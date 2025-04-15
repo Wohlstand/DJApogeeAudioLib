@@ -42,6 +42,7 @@ void USER_InitArgs
    (
    int argc, char **argv
    )
+
    {
       _argc = argc;
       _argv = argv;

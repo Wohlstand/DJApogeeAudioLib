@@ -28,14 +28,22 @@
 #define FP_SEG(x) (uint16_t)((uint32_t)(x) >> 16) /* grab 16 most significant bits */
 #define FP_OFF(x) (uint16_t)((uint32_t)(x)) /* grab 16 least significant bits */
 
-static inline void *MK_FP(uint16_t seg, uint16_t ofs)
-{
-    if(!(_crt0_startup_flags & _CRT0_FLAG_NEARPTR) )
-        if (!__djgpp_nearptr_enable ())
-            return (void *)0;
+static inline void *MK_FP
+   (
+   uint16_t seg, uint16_t ofs
+   )
 
-    return (void *)(seg*16 + ofs + __djgpp_conventional_base);
-}
+   {
+   if( !(_crt0_startup_flags & _CRT0_FLAG_NEARPTR ) )
+      {
+      if ( !__djgpp_nearptr_enable() )
+         {
+         return (void *)0;
+         }
+      }
+
+   return (void *)( seg * 16 + ofs + __djgpp_conventional_base );
+   }
 
 #define min(x, y) ((x) < (y) ? (x) : (y))
 #define max(x, y) ((x) > (y) ? (x) : (y))
@@ -57,26 +65,26 @@ static inline void *MK_FP(uint16_t seg, uint16_t ofs)
 #define _far
 #define __far
 
-#define replaceInterrupt(OldInt,NewInt,vector,handler)				\
-	_go32_dpmi_get_protected_mode_interrupt_vector(vector, &OldInt);	\
-																		\
-	NewInt.pm_selector = _go32_my_cs(); 								\
-	NewInt.pm_offset = (int32_t)handler;								\
-	_go32_dpmi_allocate_iret_wrapper(&NewInt);							\
-	_go32_dpmi_set_protected_mode_interrupt_vector(vector, &NewInt)
+#define replaceInterrupt( OldInt, NewInt, vector, handler ) \
+   _go32_dpmi_get_protected_mode_interrupt_vector(vector, &OldInt); \
+\
+   NewInt.pm_selector = _go32_my_cs(); \
+   NewInt.pm_offset = (int32_t)handler; \
+   _go32_dpmi_allocate_iret_wrapper(&NewInt); \
+   _go32_dpmi_set_protected_mode_interrupt_vector(vector, &NewInt)
 
-#define restoreInterrupt(vector,OldInt,NewInt)						\
-	_go32_dpmi_set_protected_mode_interrupt_vector(vector, &OldInt);	\
-	_go32_dpmi_free_iret_wrapper(&NewInt)
+#define restoreInterrupt( vector, OldInt, NewInt ) \
+   _go32_dpmi_set_protected_mode_interrupt_vector(vector, &OldInt); \
+   _go32_dpmi_free_iret_wrapper(&NewInt)
 
-#define _chain_intr(OldInt)		\
-asm								\
-(								\
-	"cli \n"					\
-	"pushfl \n"					\
-	"lcall *%0"					\
-	:							\
-	: "m" (OldInt.pm_offset)	\
-)
+#define _chain_intr( OldInt ) \
+   asm \
+   ( \
+      "cli \n" \
+      "pushfl \n" \
+      "lcall *%0" \
+      : \
+      : "m" (OldInt.pm_offset) \
+   )
 
 #endif // DJCONFIG_H
