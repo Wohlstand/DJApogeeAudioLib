@@ -29,9 +29,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 **********************************************************************/
 
 #include <dos.h>
+#include <stdint.h>
+#include <sys/segments.h>
 #include <sys/nearptr.h>
 #include <dpmi.h>
-#include "djconfig.h"
+// #include "djconfig.h"
 #include "a_dpmi.h"
 
 #define TRUE  ( 1 == 1 )
@@ -101,24 +103,44 @@ int DPMI_CallRealModeFunction
    )
 
    {
-   // Setup our registers to call DPMI
-   Regs.w.ax = 0x0301;
-   Regs.h.bl = 0;
-   Regs.h.bh = 0;
-   Regs.w.cx = 0;
+   int ret;
+   __dpmi_regs regs;
 
-   SegRegs.es = FP_SEG( callregs );
-   Regs.d.edi = FP_OFF( callregs );
+   // Setup our registers to call DPMI
+   regs.d.ebx = callregs->EBX;
+   regs.d.ecx = callregs->ECX;
+   regs.d.edx = callregs->EDX;
+   regs.x.ss = callregs->SS;
+   regs.x.sp = callregs->SP;
+   regs.x.ds = callregs->DS;
+   regs.x.es = callregs->ES;
+   regs.x.fs = callregs->FS;
+   regs.x.gs = callregs->GS;
+   regs.x.ip = callregs->IP;
+   regs.x.cs = callregs->CS;
 
    // Call Real-mode procedure with Far Return Frame
-   int386x( 0x31, &Regs, &Regs, &SegRegs );
+   ret = __dpmi_simulate_real_mode_procedure_retf(&regs);
 
-   if ( Regs.x.cflag )
+   if ( ret < 0 )
       {
       return( DPMI_Error );
       }
 
    return( DPMI_Ok );
+
+   // Regs.w.ax = 0x0301;
+   // Regs.h.bl = 0;
+   // Regs.h.bh = 0;
+   // Regs.w.cx = 0;
+
+   // SegRegs.es = FP_SEG( callregs );
+   // Regs.d.edi = FP_OFF( callregs );
+
+   // Call Real-mode procedure with Far Return Frame
+   // int386x( 0x31, &Regs, &Regs, &SegRegs );
+
+   // if ( Regs.x.cflag )
    }
 
 int  DPMI_GetDOSMemory
@@ -171,8 +193,10 @@ int DPMI_LockMemory
    unsigned long baseaddr;
    __dpmi_meminfo mem;
 
-   if (__dpmi_get_segment_base_address(_my_ds(), &baseaddr) == -1)
+   if ( __dpmi_get_segment_base_address(_my_ds(), &baseaddr) == -1 )
+      {
       return( DPMI_Error );
+      }
 
    mem.handle = 0;
    mem.address = baseaddr + (intptr_t)address;
@@ -181,7 +205,9 @@ int DPMI_LockMemory
    ret = __dpmi_lock_linear_region(&mem);
 
    if ( ret == -1 )
+      {
       return( DPMI_Error );
+      }
 
    // unsigned linear;
 
@@ -252,8 +278,10 @@ int DPMI_UnlockMemory
    unsigned long baseaddr;
    __dpmi_meminfo mem;
 
-   if (__dpmi_get_segment_base_address(_my_ds(), &baseaddr) == -1)
+   if ( __dpmi_get_segment_base_address(_my_ds(), &baseaddr) == -1 )
+      {
       return( DPMI_Error );
+      }
 
    mem.handle = 0;
    mem.address = baseaddr + (intptr_t)address;
@@ -261,7 +289,9 @@ int DPMI_UnlockMemory
    ret = __dpmi_unlock_linear_region(&mem);
 
    if ( ret == -1 )
+      {
       return( DPMI_Error );
+      }
    // unsigned linear;
 
    // // Thanks to DOS/4GW's zero-based flat memory model, converting

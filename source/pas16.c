@@ -45,7 +45,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 int PAS_TestAddress(int address)
 {
-   int16_t a;
+   int a;
 
    asm
    (
@@ -68,7 +68,7 @@ int PAS_TestAddress(int address)
       "sub   %%ah, %%al \n"
    "TestExit%=: \n"
       "and   $0x0ff, %%eax \n"
-      "mov   %%dx, %0 \n"
+      "mov   %%eax, %0 \n"
       : "=r" (a)
       : "r" (address)
       : "%eax", "%dx"

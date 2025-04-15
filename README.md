@@ -6,7 +6,7 @@ Can be built with CMake as a static library. Also can be used as a sub-directory
 
 This version __doesn't__ (yet) supports AWE32 and Gravis UltraSound because they require use of proprietary binary libraries that aren't compatible to DJGPP. However, Gravis Ultrasound libraries are available in the source code form, however, they have GPL incompatible license to be distributed together.
 
-Also, Pro Audio Spectrum and SoundScape support are presented, however, I had no hardware or suitable emulator to verify the work of their code.
+Also, SoundScape support is presented, however, I had no hardware or suitable emulator to verify the work of their code.
 
 ## This version also has some improvements
 - MIDI synthesizer slightly improved:
@@ -21,3 +21,4 @@ Also, Pro Audio Spectrum and SoundScape support are presented, however, I had no
 - Can't correctly play stereo files (the support wasn't be here officially, old readme contains that note).
 - Distorted playback on stereo outputs.
 - It's unknown will Pro Audio Spectrum and SoundScape work as code wasn't tested on hardware nor emulator.
+- Stereo 16-bit gets played with increase tempo (looks like the x86box has a DMA buffer limit size or the bug in the code...).
