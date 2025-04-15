@@ -201,15 +201,15 @@ int main
       }
 
    printf("Init card...\n");
-   status = FX_SetupCard( card, &device );
+   status = FX_SetupCard( SoundCardNums[card], &device );
    if ( status != FX_Ok )
       {
       printf( "%s\n", FX_ErrorString( status ) );
       return 1;
       }
 
-   printf("Init FX... (C=%d, V=%d, C=%d, B=%d, R=%d)\n", card, voices, channels, bits, rate);
-   status = FX_Init( card, voices, channels, bits, rate );
+   printf("Init FX... (C=%d [%d=%s], V=%d, C=%d, B=%d, R=%d)\n", card, SoundCardNums[card], SoundCardNames[card], voices, channels, bits, rate);
+   status = FX_Init( SoundCardNums[card], voices, channels, bits, rate );
    if ( status != FX_Ok )
       {
       printf( "%s\n", FX_ErrorString( status ) );
