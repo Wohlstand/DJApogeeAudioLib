@@ -177,7 +177,7 @@ int main
       printf( "Value out of range for CARD: %d\n", card );
       }
 
-   printf("Init music... (card %d, %s)\n", SoundCardNums[ card ], SoundCardNames[ card ]);
+   printf("Init music... (card %d [%d] - %s)\n", card, SoundCardNums[ card ], SoundCardNames[ card ]);
    status = MUSIC_Init( SoundCardNums[ card ], address );
    if ( status != MUSIC_Ok )
       {
