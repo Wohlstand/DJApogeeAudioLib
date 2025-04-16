@@ -3120,9 +3120,10 @@ int MV_TestPlayback
 
    {
    unsigned flags;
-   long time;
+   // long time;
    int  start;
    int  status;
+   int  count;
    int  pos;
 
    if ( MV_SoundCard == UltraSound )
@@ -3135,15 +3136,26 @@ int MV_TestPlayback
 
    status = MV_Error;
    start  = MV_MixPage;
-   time   = clock() + CLOCKS_PER_SEC * 2;
+   count = 0;
+   // time   = clock() + CLOCKS_PER_SEC * 2;
 
-   while( clock() < time )
+   do
       {
+      delay( 200 );
       if ( MV_MixPage != start )
          {
          status = MV_Ok;
          }
       }
+      while( ++count < 10 );
+
+   // while( clock() < time )
+   //    {
+   //    if ( MV_MixPage != start )
+   //       {
+   //       status = MV_Ok;
+   //       }
+   //    }
 
    RestoreInterrupts( flags );
 

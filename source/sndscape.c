@@ -490,14 +490,16 @@ static void tdelay
    )
 
    {
-   long time;
+   // long time;
    unsigned flags;
 
    flags = DisableInterrupts();
    _enable();
-   time = clock() + CLOCKS_PER_SEC/4;
-   while(clock() < time)
-      ;
+
+   delay( 250 );
+   // time = clock() + CLOCKS_PER_SEC/4;
+   // while(clock() < time)
+   //    ;
 
    RestoreInterrupts( flags );
    }

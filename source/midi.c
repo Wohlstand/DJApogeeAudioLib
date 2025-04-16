@@ -949,16 +949,17 @@ int MIDI_Reset
 
    {
    int channel;
-   long time;
+   // long time;
    unsigned flags;
 
    MIDI_AllNotesOff();
 
    flags = DisableInterrupts();
    _enable();
-   time = clock() + CLOCKS_PER_SEC/24;
-   while(clock() < time)
-      ;
+   delay( 42 );
+   // time = clock() + CLOCKS_PER_SEC/24;
+   // while(clock() < time)
+   //    ;
 
    RestoreInterrupts( flags );
 
