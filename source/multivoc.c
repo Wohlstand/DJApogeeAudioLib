@@ -2381,17 +2381,17 @@ int MV_StartDemandFeedPlayback
 ---------------------------------------------------------------------*/
 
 int MV_PlayRaw
-(
-uint8_t *ptr,
-unsigned long length,
-unsigned rate,
-int   pitchoffset,
-int   vol,
-int   left,
-int   right,
-int   priority,
-unsigned long callbackval
-)
+   (
+   uint8_t *ptr,
+   unsigned long length,
+   unsigned rate,
+   int   pitchoffset,
+   int   vol,
+   int   left,
+   int   right,
+   int   priority,
+   unsigned long callbackval
+   )
 
    {
    int status;
@@ -2503,14 +2503,14 @@ int MV_PlayWAV
 ---------------------------------------------------------------------*/
 
 int MV_PlayWAV3D
-(
-uint8_t *ptr,
-int  pitchoffset,
-int  angle,
-int  distance,
-int  priority,
-unsigned long callbackval
-)
+   (
+   uint8_t *ptr,
+   int  pitchoffset,
+   int  angle,
+   int  distance,
+   int  priority,
+   unsigned long callbackval
+   )
 
    {
    int left;
@@ -2555,17 +2555,17 @@ unsigned long callbackval
 ---------------------------------------------------------------------*/
 
 int MV_PlayLoopedWAV
-(
-uint8_t *ptr,
-long  loopstart,
-long  loopend,
-int   pitchoffset,
-int   vol,
-int   left,
-int   right,
-int   priority,
-unsigned long callbackval
-)
+   (
+   uint8_t *ptr,
+   long  loopstart,
+   long  loopend,
+   int   pitchoffset,
+   int   vol,
+   int   left,
+   int   right,
+   int   priority,
+   unsigned long callbackval
+   )
 
    {
    riff_header   *riff;
@@ -2788,15 +2788,15 @@ int MV_PlayVOC3D
 ---------------------------------------------------------------------*/
 
 int MV_PlayVOC
-(
-uint8_t *ptr,
-int   pitchoffset,
-int   vol,
-int   left,
-int   right,
-int   priority,
-unsigned long callbackval
-)
+   (
+   uint8_t *ptr,
+   int   pitchoffset,
+   int   vol,
+   int   left,
+   int   right,
+   int   priority,
+   unsigned long callbackval
+   )
 
    {
    int status;
