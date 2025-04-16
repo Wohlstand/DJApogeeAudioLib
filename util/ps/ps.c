@@ -128,10 +128,6 @@ int main
    reverb   = 0;
    rate     = 11000;
 
-   FX_GetBlasterSettings( &blaster );
-   printf("Card setup: A=0x%lX, I=%ld, D8=%ld, D16=%ld\n", blaster.Address, blaster.Interrupt, blaster.Dma8, blaster.Dma16);
-   FX_SetupSoundBlaster(blaster, &device.MaxVoices, &device.MaxSampleBits, &device.MaxChannels);
-
    ptr = GetUserText( "VOICES", argc, argv );
    if ( ptr != NULL )
       {
@@ -178,6 +174,13 @@ int main
       {
       printf( "Value out of range for sound card #: %d\n", card );
       return 1;
+      }
+
+   if ( SoundCardNums[ card ] == SoundBlaster || SoundCardNums[ card ] == Awe32 )
+      {
+      FX_GetBlasterSettings( &blaster );
+      printf("Blaster card setup: A=0x%lX, I=%ld, D8=%ld, D16=%ld\n", blaster.Address, blaster.Interrupt, blaster.Dma8, blaster.Dma16);
+      FX_SetupSoundBlaster(blaster, &device.MaxVoices, &device.MaxSampleBits, &device.MaxChannels);
       }
 
    strcpy( filename, argv[ 1 ] );
