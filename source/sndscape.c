@@ -65,22 +65,22 @@ static void ( __interrupt __far *SOUNDSCAPE_OldInt )( void );
 static int SOUNDSCAPE_Installed = FALSE;
 static int SOUNDSCAPE_FoundCard = FALSE;
 
-static uint8_t*SOUNDSCAPE_DMABuffer;
-static uint8_t*SOUNDSCAPE_DMABufferEnd;
-static uint8_t*SOUNDSCAPE_CurrentDMABuffer;
-static int     SOUNDSCAPE_TotalDMABufferSize;
+static uint8_t*SOUNDSCAPE_DMABuffer = NULL;
+static uint8_t*SOUNDSCAPE_DMABufferEnd = NULL;
+static uint8_t*SOUNDSCAPE_CurrentDMABuffer = NULL;
+static int     SOUNDSCAPE_TotalDMABufferSize = 0;
 
 static int      SOUNDSCAPE_TransferLength   = 0;
 static int      SOUNDSCAPE_MixMode          = SOUNDSCAPE_DefaultMixMode;
 static int      SOUNDSCAPE_SamplePacketSize = MONO_16BIT_SAMPLE_SIZE;
 static unsigned SOUNDSCAPE_SampleRate       = SOUNDSCAPE_DefaultSampleRate;
 
-volatile int   SOUNDSCAPE_SoundPlaying;
+volatile int   SOUNDSCAPE_SoundPlaying = 0;
 
-void ( *SOUNDSCAPE_CallBack )( void );
+void ( *SOUNDSCAPE_CallBack )( void ) = NULL;
 
-static int  SOUNDSCAPE_IntController1Mask;
-static int  SOUNDSCAPE_IntController2Mask;
+static int  SOUNDSCAPE_IntController1Mask = 0;
+static int  SOUNDSCAPE_IntController2Mask = 0;
 
 // some globals for chip type, ports, DMA, IRQs ... and stuff
 static struct
@@ -101,10 +101,10 @@ static struct
 #define kStackSize 2048
 
 static unsigned short StackSelector = 0;
-static unsigned long  StackPointer;
+static unsigned long  StackPointer = 0;
 
-static unsigned short oldStackSelector;
-static unsigned long  oldStackPointer;
+static unsigned short oldStackSelector = 0;
+static unsigned long  oldStackPointer = 0;
 
 // These declarations are necessary to use the inline assembly pragmas.
 

@@ -109,7 +109,7 @@ static VoiceNode *MV_Voices = NULL;
 static volatile VoiceNode VoiceList = {NULL, NULL};
 static volatile VoiceNode VoicePool = {NULL, NULL};
 
-static int MV_MixPage      = 0;
+static volatile int MV_MixPage      = 0;
 static int MV_VoiceHandle  = MV_MinVoiceHandle;
 
 static void ( *MV_CallBackFunc )( unsigned long ) = NULL;
