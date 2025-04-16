@@ -126,12 +126,12 @@ static __attribute__((always_inline)) inline void GetStack
       : "%esi", "%edi"
    );
    }
-// #pragma aux GetStack =	\
-// 	"mov  [edi],esp"		\
-// 	"mov	ax,ss"	 		\
-// 	"mov  [esi],ax" 		\
-// 	parm [esi] [edi]		\
-// 	modify [eax esi edi];
+// #pragma aux GetStack =   \
+//    "mov  [edi],esp"      \
+//    "mov   ax,ss"          \
+//    "mov  [esi],ax"       \
+//    parm [esi] [edi]      \
+//    modify [eax esi edi];
 
 
 // This function will set the stack selector and pointer to the specified
@@ -151,11 +151,11 @@ static __attribute__((always_inline)) inline void SetStack
    );
    }
 
-// #pragma aux SetStack =	\
-// 	"mov  ss,ax"			\
-// 	"mov  esp,edx"			\
-// 	parm [ax] [edx]		\
-// 	modify [eax edx];
+// #pragma aux SetStack =   \
+//    "mov  ss,ax"         \
+//    "mov  esp,edx"         \
+//    parm [ax] [edx]      \
+//    modify [eax edx];
 
 int SOUNDSCAPE_DMAChannel = -1;
 
@@ -363,7 +363,7 @@ static void __interrupt __far SOUNDSCAPE_ServiceInterrupt
    // set our stack
    SetStack( StackSelector, StackPointer );
 
-	if ( !( inp( SOUNDSCAPE_Config.WavePort + AD_STATUS ) & 0x01 ) )
+   if ( !( inp( SOUNDSCAPE_Config.WavePort + AD_STATUS ) & 0x01 ) )
       {
       // restore stack
       SetStack( oldStackSelector, oldStackPointer );
@@ -373,7 +373,7 @@ static void __interrupt __far SOUNDSCAPE_ServiceInterrupt
       }
 
    // clear the AD-1848 interrupt
-	outp( SOUNDSCAPE_Config.WavePort + AD_STATUS, 0x00 );
+   outp( SOUNDSCAPE_Config.WavePort + AD_STATUS, 0x00 );
 
    // Keep track of current buffer
    SOUNDSCAPE_CurrentDMABuffer += SOUNDSCAPE_TransferLength;
@@ -433,8 +433,8 @@ static void ga_write
    )
 
    {
-	outp( SOUNDSCAPE_Config.BasePort + GA_REGADDR, rnum );
-	outp( SOUNDSCAPE_Config.BasePort + GA_REGDATA, value );
+   outp( SOUNDSCAPE_Config.BasePort + GA_REGADDR, rnum );
+   outp( SOUNDSCAPE_Config.BasePort + GA_REGDATA, value );
    }
 
 
@@ -453,8 +453,8 @@ static int ad_read
    {
    int data;
 
-	outp( SOUNDSCAPE_Config.WavePort + AD_REGADDR, rnum );
-	data = inp( SOUNDSCAPE_Config.WavePort + AD_REGDATA );
+   outp( SOUNDSCAPE_Config.WavePort + AD_REGADDR, rnum );
+   data = inp( SOUNDSCAPE_Config.WavePort + AD_REGDATA );
    return( data );
    }
 
@@ -490,14 +490,14 @@ static void tdelay
    )
 
    {
-	long time;
+   long time;
    unsigned flags;
 
    flags = DisableInterrupts();
    _enable();
-	time = clock() + CLOCKS_PER_SEC/4;
-	while(clock() < time)
-		;
+   time = clock() + CLOCKS_PER_SEC/4;
+   while(clock() < time)
+      ;
 
    RestoreInterrupts( flags );
    }
@@ -515,10 +515,10 @@ static void pcm_format
    )
 
    {
-	int format;
+   int format;
 
-	// build the register value based on format
-	format = 0;
+   // build the register value based on format
+   format = 0;
 
    switch( SOUNDSCAPE_SampleRate )
       {
@@ -540,7 +540,7 @@ static void pcm_format
          break;
       }
 
-	// set other format bits and format globals
+   // set other format bits and format globals
    if ( SOUNDSCAPE_MixMode & SIXTEEN_BIT )
       {
       format |= 0x40;
@@ -551,20 +551,20 @@ static void pcm_format
       format |= 0x10;
       }
 
-	// enable mode change, point to format reg
-	outp( SOUNDSCAPE_Config.WavePort + AD_REGADDR, 0x40 | AD_FORMAT );
+   // enable mode change, point to format reg
+   outp( SOUNDSCAPE_Config.WavePort + AD_REGADDR, 0x40 | AD_FORMAT );
 
-	// write the format
-	outp( SOUNDSCAPE_Config.WavePort + AD_REGDATA, format );
+   // write the format
+   outp( SOUNDSCAPE_Config.WavePort + AD_REGDATA, format );
 
-	// delay for internal re-synch
-	tdelay();
+   // delay for internal re-synch
+   tdelay();
 
-	// exit mode change state
-	outp( SOUNDSCAPE_Config.WavePort + AD_REGADDR, 0x00 );
+   // exit mode change state
+   outp( SOUNDSCAPE_Config.WavePort + AD_REGADDR, 0x00 );
 
-	// delay for autocalibration
-	tdelay();
+   // delay for autocalibration
+   tdelay();
    }
 
 
@@ -655,11 +655,11 @@ void SOUNDSCAPE_StopPlayback
    // Don't allow anymore interrupts
    SOUNDSCAPE_DisableInterrupt();
 
-	/* stop the AD-1848 */
-	ad_write( AD_CONFIG, 0x00 );
+   /* stop the AD-1848 */
+   ad_write( AD_CONFIG, 0x00 );
 
-	/* let it finish it's cycles */
-	tdelay();
+   /* let it finish it's cycles */
+   tdelay();
 
    // Disable the DMA channel
    DMA_EndTransfer( SOUNDSCAPE_Config.DMAChan );
@@ -775,22 +775,22 @@ static int SOUNDSCAPE_BeginPlayback
 
    SampleLength--;
 
-	// setup the AD-1848 interrupt count
-	// set the interrupt count value based on the format.
-	// count will decrement every sample period and generate
-	// an interrupt when in rolls over. we want this always
-	// to be at every 1/2 buffer, regardless of the data format,
-	// so the count must be adjusted accordingly.
+   // setup the AD-1848 interrupt count
+   // set the interrupt count value based on the format.
+   // count will decrement every sample period and generate
+   // an interrupt when in rolls over. we want this always
+   // to be at every 1/2 buffer, regardless of the data format,
+   // so the count must be adjusted accordingly.
    HiByte = hibyte( SampleLength );
    LoByte = lobyte( SampleLength );
-	ad_write( AD_LCOUNT, LoByte );
-	ad_write( AD_UCOUNT, HiByte );
+   ad_write( AD_LCOUNT, LoByte );
+   ad_write( AD_UCOUNT, HiByte );
 
-	/* unmask the host DMA controller */
+   /* unmask the host DMA controller */
    SOUNDSCAPE_EnableInterrupt();
 
-	/* start the AD-1848 */
-	ad_write(AD_CONFIG, 0x01);
+   /* start the AD-1848 */
+   ad_write(AD_CONFIG, 0x01);
 
    SOUNDSCAPE_SoundPlaying = TRUE;
 
@@ -1060,13 +1060,13 @@ static int parse
    )
 
    {
-	int  i;
-	int  j;
+   int  i;
+   int  j;
    char tmpstr[ 81 ];
 
-	rewind( p1 );
+   rewind( p1 );
 
-	while( !feof( p1 ) )
+   while( !feof( p1 ) )
       {
       // get a new string
       fgets( tmpstr, 81, p1 );
@@ -1076,29 +1076,29 @@ static int parse
          continue;
          }
 
-		// parse up to the '='
+      // parse up to the '='
       i = 0;
       while( ( tmpstr[ i ] != '=' ) && ( tmpstr[ i ] != '\n' ) )
          {
          i++;
          }
 
-		if( tmpstr[ i ] != '=' )
+      if( tmpstr[ i ] != '=' )
          {
          continue;
          }
 
-		tmpstr[ i ] = '\0';
+      tmpstr[ i ] = '\0';
 
-		// see if it's the one we want
-		if ( strcmp( tmpstr, str ) )
+      // see if it's the one we want
+      if ( strcmp( tmpstr, str ) )
          {
          continue;
          }
 
-		// copy the right hand value to the destination string
+      // copy the right hand value to the destination string
       i++;
-		for( j = 0; j < 32; j++ )
+      for( j = 0; j < 32; j++ )
          {
          if ( ( tmpstr[ i ] == ' ' ) || ( tmpstr[ i ] == '\t' ) ||
             ( tmpstr[ i ] == ',' ) || ( tmpstr[ i ] == '\n' ) )
@@ -1106,10 +1106,10 @@ static int parse
             break;
             }
 
-			val[ j ] = tmpstr[ i ];
+         val[ j ] = tmpstr[ i ];
          i++;
          }
-		val[j] = '\0';
+      val[j] = '\0';
 
       return( TRUE );
       }
@@ -1133,16 +1133,16 @@ static int SOUNDSCAPE_FindCard
    int   found;
    int   status;
    int   tmp;
-	char *cp;
+   char *cp;
    char  str[ 33 ];
-	FILE *fp;
+   FILE *fp;
 
    if ( SOUNDSCAPE_FoundCard )
       {
       return( SOUNDSCAPE_Ok );
       }
 
-	cp = getenv( "SNDSCAPE" );
+   cp = getenv( "SNDSCAPE" );
    if ( cp == NULL )
       {
       strcpy( str, "C:\\SNDSCAPE" );
@@ -1154,7 +1154,7 @@ static int SOUNDSCAPE_FindCard
 
    strcat(str, "\\SNDSCAPE.INI");
 
-	fp = fopen( str, "r" );
+   fp = fopen( str, "r" );
    if ( fp == NULL )
       {
       if ( cp == NULL )
@@ -1167,7 +1167,7 @@ static int SOUNDSCAPE_FindCard
       return( SOUNDSCAPE_Error );
       }
 
-	found = parse( str, "Product", fp );
+   found = parse( str, "Product", fp );
    if ( !found )
       {
       fclose( fp );
@@ -1175,16 +1175,16 @@ static int SOUNDSCAPE_FindCard
       return( SOUNDSCAPE_Error );
       }
 
-	if( strstr( str, "SoundFX" ) == NULL )
+   if( strstr( str, "SoundFX" ) == NULL )
       {
       SOUNDSCAPE_Config.OldIRQs = FALSE;
       }
-	else
+   else
       {
-		SOUNDSCAPE_Config.OldIRQs = TRUE;
+      SOUNDSCAPE_Config.OldIRQs = TRUE;
       }
 
-	found = parse( str, "Port", fp );
+   found = parse( str, "Port", fp );
    if ( !found )
       {
       fclose( fp );
@@ -1192,9 +1192,9 @@ static int SOUNDSCAPE_FindCard
       return( SOUNDSCAPE_Error );
       }
 
-	SOUNDSCAPE_Config.BasePort = strtol( str, ( char ** )0, 16);
+   SOUNDSCAPE_Config.BasePort = strtol( str, ( char ** )0, 16);
 
-	found = parse( str, "DMA", fp );
+   found = parse( str, "DMA", fp );
    if ( !found )
       {
       fclose( fp );
@@ -1202,7 +1202,7 @@ static int SOUNDSCAPE_FindCard
       return( SOUNDSCAPE_Error );
       }
 
-	SOUNDSCAPE_Config.DMAChan = ( int )strtol( str, ( char ** )0, 10 );
+   SOUNDSCAPE_Config.DMAChan = ( int )strtol( str, ( char ** )0, 10 );
    status = DMA_VerifyChannel( SOUNDSCAPE_Config.DMAChan );
    if ( status == DMA_Error )
       {
@@ -1211,7 +1211,7 @@ static int SOUNDSCAPE_FindCard
       return( SOUNDSCAPE_Error );
       }
 
-	found = parse( str, "IRQ", fp );
+   found = parse( str, "IRQ", fp );
    if ( !found )
       {
       fclose( fp );
@@ -1219,13 +1219,13 @@ static int SOUNDSCAPE_FindCard
       return( SOUNDSCAPE_Error );
       }
 
-	SOUNDSCAPE_Config.MIDIIRQ = ( int )strtol( str, ( char ** )0, 10 );
+   SOUNDSCAPE_Config.MIDIIRQ = ( int )strtol( str, ( char ** )0, 10 );
    if ( SOUNDSCAPE_Config.MIDIIRQ == 2 )
       {
       SOUNDSCAPE_Config.MIDIIRQ = 9;
       }
 
-	found = parse( str, "SBIRQ", fp );
+   found = parse( str, "SBIRQ", fp );
    if ( !found )
       {
       fclose( fp );
@@ -1233,10 +1233,10 @@ static int SOUNDSCAPE_FindCard
       return( SOUNDSCAPE_Error );
       }
 
-	SOUNDSCAPE_Config.WaveIRQ = ( int )strtol( str, ( char ** )0, 10 );
-	if ( SOUNDSCAPE_Config.WaveIRQ == 2 )
+   SOUNDSCAPE_Config.WaveIRQ = ( int )strtol( str, ( char ** )0, 10 );
+   if ( SOUNDSCAPE_Config.WaveIRQ == 2 )
       {
-		SOUNDSCAPE_Config.WaveIRQ = 9;
+      SOUNDSCAPE_Config.WaveIRQ = 9;
       }
 
    if ( !VALID_IRQ( SOUNDSCAPE_Config.WaveIRQ ) )
@@ -1253,7 +1253,7 @@ static int SOUNDSCAPE_FindCard
       return( SOUNDSCAPE_Error );
       }
 
-	found = parse( str, "SBEnable", fp );
+   found = parse( str, "SBEnable", fp );
    if ( !found )
       {
       fclose( fp );
@@ -1261,49 +1261,49 @@ static int SOUNDSCAPE_FindCard
       return( SOUNDSCAPE_Error );
       }
 
-	if( !strcmp( str, "false" ) )
+   if( !strcmp( str, "false" ) )
       {
       SOUNDSCAPE_Config.SBEmul = FALSE;
       }
-	else
+   else
       {
       SOUNDSCAPE_Config.SBEmul = TRUE;
       }
 
-	// do a hardware test
-	outp( SOUNDSCAPE_Config.BasePort + GA_REGADDR, 0x00f5 );
-	tmp = inp( SOUNDSCAPE_Config.BasePort + GA_REGADDR );
-	if ( ( tmp & 0x000f ) != 0x0005 )
+   // do a hardware test
+   outp( SOUNDSCAPE_Config.BasePort + GA_REGADDR, 0x00f5 );
+   tmp = inp( SOUNDSCAPE_Config.BasePort + GA_REGADDR );
+   if ( ( tmp & 0x000f ) != 0x0005 )
       {
       fclose( fp );
       SOUNDSCAPE_SetErrorCode( SOUNDSCAPE_HardwareError );
       return( SOUNDSCAPE_Error );
       }
 
-	if( ( tmp & 0x00f0 ) == 0x00f0 )
+   if( ( tmp & 0x00f0 ) == 0x00f0 )
       {
       fclose( fp );
       SOUNDSCAPE_SetErrorCode( SOUNDSCAPE_HardwareError );
       return( SOUNDSCAPE_Error );
       }
 
-	// formulate the chip ID
-	tmp >>= 4;
-	if( tmp == 0 )
+   // formulate the chip ID
+   tmp >>= 4;
+   if( tmp == 0 )
       {
       SOUNDSCAPE_Config.ChipID = ODIE;
       }
-	else if ( !( tmp & 0x0008 ) )
+   else if ( !( tmp & 0x0008 ) )
       {
-		SOUNDSCAPE_Config.ChipID = OPUS;
+      SOUNDSCAPE_Config.ChipID = OPUS;
       }
-	else
+   else
       {
-		SOUNDSCAPE_Config.ChipID = MMIC;
+      SOUNDSCAPE_Config.ChipID = MMIC;
       }
 
-	// parse for the AD-1848 address if necessary
-	if( SOUNDSCAPE_Config.ChipID == ODIE )
+   // parse for the AD-1848 address if necessary
+   if( SOUNDSCAPE_Config.ChipID == ODIE )
       {
       found = parse( str, "WavePort", fp );
       if ( !found )
@@ -1315,23 +1315,23 @@ static int SOUNDSCAPE_FindCard
 
       SOUNDSCAPE_Config.WavePort = strtol( str, ( char ** )0, 16 );
       }
-	else
+   else
       {
       // otherwise, the base address is fixed
       SOUNDSCAPE_Config.WavePort = SOUNDSCAPE_Config.BasePort + AD_OFFSET;
       }
 
-	// we're done with the file
-	fclose( fp );
+   // we're done with the file
+   fclose( fp );
 
-	// if it's an ODIE board, note CD-ROM decode enable
-	if ( SOUNDSCAPE_Config.ChipID == ODIE )
+   // if it's an ODIE board, note CD-ROM decode enable
+   if ( SOUNDSCAPE_Config.ChipID == ODIE )
       {
-		SOUNDSCAPE_Config.CDROM = ga_read( GA_CDCFG ) & 0x80;
+      SOUNDSCAPE_Config.CDROM = ga_read( GA_CDCFG ) & 0x80;
       }
 
-	// build the Wave IRQ index value
-	if( !SOUNDSCAPE_Config.OldIRQs )
+   // build the Wave IRQ index value
+   if( !SOUNDSCAPE_Config.OldIRQs )
       {
       switch( SOUNDSCAPE_Config.WaveIRQ )
          {
@@ -1396,25 +1396,25 @@ static int SOUNDSCAPE_Setup
    int Interrupt;
    int status;
 
-	// if necessary, clear any pending SB ints
-	if ( SOUNDSCAPE_Config.SBEmul )
+   // if necessary, clear any pending SB ints
+   if ( SOUNDSCAPE_Config.SBEmul )
       {
       inp( SB_IACK );
       }
 
    SOUNDSCAPE_DisableInterrupt();
 
-	// make sure the AD-1848 is not running
-	if ( ad_read( AD_CONFIG ) & 0x01 )
+   // make sure the AD-1848 is not running
+   if ( ad_read( AD_CONFIG ) & 0x01 )
       {
       SOUNDSCAPE_StopPlayback();
       }
 
-	// if necessary, do some signal re-routing
-	if( SOUNDSCAPE_Config.ChipID != MMIC )
+   // if necessary, do some signal re-routing
+   if( SOUNDSCAPE_Config.ChipID != MMIC )
       {
       // get the gate-array off of the DMA channel
-		ga_write( GA_DMACHB, 0x20 );
+      ga_write( GA_DMACHB, 0x20 );
 
       if ( !SOUNDSCAPE_Config.OldIRQs )
          {
@@ -1463,25 +1463,25 @@ static int SOUNDSCAPE_Setup
       ga_write( GA_INTCFG, 0xf0 | ( tmp << 2 ) | tmp );
 
       // now, route the AD-1848 stuff ...
-		if ( SOUNDSCAPE_Config.ChipID == OPUS )
+      if ( SOUNDSCAPE_Config.ChipID == OPUS )
          {
          // set the AD-1848 chip decode
          ga_write( GA_HMCTL, ( ga_read( GA_HMCTL ) & 0xcf ) | 0x10 );
          }
       // setup the DMA polarity
-		ga_write( GA_DMACFG, 0x50 );
+      ga_write( GA_DMACFG, 0x50 );
 
-		// init the CD-ROM (AD-1848) config register
-		ga_write( GA_CDCFG, 0x89 | ( SOUNDSCAPE_Config.DMAChan << 4 ) | ( SOUNDSCAPE_Config.IRQIndx << 1 ) );
+      // init the CD-ROM (AD-1848) config register
+      ga_write( GA_CDCFG, 0x89 | ( SOUNDSCAPE_Config.DMAChan << 4 ) | ( SOUNDSCAPE_Config.IRQIndx << 1 ) );
 
       // enable mode change, point to config reg
-		outp( SOUNDSCAPE_Config.WavePort + AD_REGADDR, 0x40 | AD_CONFIG );
+      outp( SOUNDSCAPE_Config.WavePort + AD_REGADDR, 0x40 | AD_CONFIG );
 
       // set interf cnfg reg for DMA mode, single chan, autocal on
-		outp( SOUNDSCAPE_Config.WavePort + AD_REGDATA, 0x0c );
+      outp( SOUNDSCAPE_Config.WavePort + AD_REGDATA, 0x0c );
 
       // exit mode change state
-		outp( SOUNDSCAPE_Config.WavePort + AD_REGADDR, 0x00 );
+      outp( SOUNDSCAPE_Config.WavePort + AD_REGADDR, 0x00 );
 
       // delay for autocalibration
       tdelay();
@@ -1507,15 +1507,15 @@ static int SOUNDSCAPE_Setup
       }
 #endif
 
-	// max left and right volumes
-	ad_write( AD_LEFTOUT, 0 );
-	ad_write( AD_RIGHTOUT, 0 );
+   // max left and right volumes
+   ad_write( AD_LEFTOUT, 0 );
+   ad_write( AD_RIGHTOUT, 0 );
 
-	// clear any pending interrupt condition
-	outp( SOUNDSCAPE_Config.WavePort + AD_STATUS, 0x00 );
+   // clear any pending interrupt condition
+   outp( SOUNDSCAPE_Config.WavePort + AD_STATUS, 0x00 );
 
-	// enable the interrupt pin
-	ad_write( AD_PINCTRL, ad_read( AD_PINCTRL ) | 0x02 );
+   // enable the interrupt pin
+   ad_write( AD_PINCTRL, ad_read( AD_PINCTRL ) | 0x02 );
 
    SOUNDSCAPE_EnableInterrupt();
 
@@ -1609,8 +1609,8 @@ int SOUNDSCAPE_Init
       return( status );
       }
 
-//	printf("Testing DMA and IRQ ...\n");
-//	if( test_dma_irq() )
+//   printf("Testing DMA and IRQ ...\n");
+//   if( test_dma_irq() )
 //      {
 //      printf("\t\007Hardware Not Responding\n\n");
 //      close_soundscape();
@@ -1643,32 +1643,32 @@ void SOUNDSCAPE_Shutdown
    // Halt the DMA transfer
    SOUNDSCAPE_StopPlayback();
 
-	// disable the AD-1848 interrupt pin
-	ad_write( AD_PINCTRL, ad_read( AD_PINCTRL ) & 0xfd );
+   // disable the AD-1848 interrupt pin
+   ad_write( AD_PINCTRL, ad_read( AD_PINCTRL ) & 0xfd );
 
-	// if necessary, do some signal re-routing
-	if ( SOUNDSCAPE_Config.ChipID != MMIC )
+   // if necessary, do some signal re-routing
+   if ( SOUNDSCAPE_Config.ChipID != MMIC )
       {
-		// re-init the CD-ROM (AD-1848) config register as needed.
-		// this will disable the AD-1848 interface.
-		if ( SOUNDSCAPE_Config.ChipID == ODIE )
+      // re-init the CD-ROM (AD-1848) config register as needed.
+      // this will disable the AD-1848 interface.
+      if ( SOUNDSCAPE_Config.ChipID == ODIE )
          {
          ga_write( GA_CDCFG, SOUNDSCAPE_Config.CDROM );
          }
-		else
+      else
          {
          ga_write( GA_CDCFG, ga_read( GA_CDCFG ) & 0x7f);
          }
 
-		// if necessary, reset the SoundBlaster IRQ
-		if ( SOUNDSCAPE_Config.SBEmul )
+      // if necessary, reset the SoundBlaster IRQ
+      if ( SOUNDSCAPE_Config.SBEmul )
          {
          ga_write( GA_INTCFG, ( ga_read( GA_INTCFG ) & 0xf3 ) |
             ( SOUNDSCAPE_Config.IRQIndx << 2 ) );
          }
 
       // re-assign the gate-array DMA channel
-		ga_write( GA_DMACHB, 0x80 | ( SOUNDSCAPE_Config.DMAChan << 4 ) );
+      ga_write( GA_DMACHB, 0x80 | ( SOUNDSCAPE_Config.DMAChan << 4 ) );
       }
 
    // Restore the original interrupt
