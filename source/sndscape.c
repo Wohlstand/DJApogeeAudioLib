@@ -79,8 +79,8 @@ volatile int   SOUNDSCAPE_SoundPlaying = 0;
 
 void ( *SOUNDSCAPE_CallBack )( void ) = NULL;
 
-static int  SOUNDSCAPE_IntController1Mask = 0;
-static int  SOUNDSCAPE_IntController2Mask = 0;
+static int32_t  SOUNDSCAPE_IntController1Mask = 0;
+static int32_t  SOUNDSCAPE_IntController2Mask = 0;
 
 // some globals for chip type, ports, DMA, IRQs ... and stuff
 static struct
@@ -290,7 +290,7 @@ static void SOUNDSCAPE_EnableInterrupt
    )
 
    {
-   int mask;
+   int32_t mask;
 
    // Unmask system interrupt
    if ( SOUNDSCAPE_Config.WaveIRQ < 8 )
@@ -322,7 +322,7 @@ static void SOUNDSCAPE_DisableInterrupt
    )
 
    {
-   int mask;
+   int32_t mask;
 
    // Restore interrupt mask
    if ( SOUNDSCAPE_Config.WaveIRQ < 8 )
