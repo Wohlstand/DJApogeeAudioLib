@@ -40,8 +40,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define TRUE  ( 1 == 1 )
 #define FALSE ( !TRUE )
 
-#define lobyte( num )   ( ( int )*( ( char * )&( num ) ) )
-#define hibyte( num )   ( ( int )*( ( ( char * )&( num ) ) + 1 ) )
+#define lobyte( num )   ( *( ( uint8_t * )&( num ) ) )
+#define hibyte( num )   ( *( ( ( uint8_t * )&( num ) ) + 1 ) )
 
 #define STEREO      1
 #define SIXTEEN_BIT 2
