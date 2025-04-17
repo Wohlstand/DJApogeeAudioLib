@@ -38,12 +38,6 @@ extern   _MV_SampleSize
 extern   _MV_RightChannelOffset
 
 
-extern   _MV_Position
-extern   _MV_Rate
-extern   _MV_Start
-extern   _MV_Length
-
-
 %ifidn __OUTPUT_FORMAT__, coff
 section .text public class=CODE USE32
 %elifidn __OUTPUT_FORMAT__, obj
@@ -58,14 +52,29 @@ align 4
 ;
 ;================
 
+; eax - position
+; edx - rate
+; ebx - start
+; ecx - number of samples to mix
+
 global    _MV_Mix8BitMono
 _MV_Mix8BitMono:
+; Init function
+        push ebp
+        mov ebp, esp
+
+        pushad
+        mov eax, [ebp + 8]      ; position
+        mov edx, [ebp + 12]     ; rate
+        mov ebx, [ebp + 16]     ; start
+        mov ecx, [ebp + 20]     ; length
+; ---------- Function body ----------
 ; Two at once
         pushad
 
-        mov     ebp, [_MV_Position]
+        mov     ebp, eax
 
-        mov     esi, [_MV_Start]                ; Source pointer
+        mov     esi, ebx                        ; Source pointer
 
         ; Sample size
         mov     ebx, [_MV_SampleSize]
@@ -92,7 +101,7 @@ _MV_Mix8BitMono:
         mov     [eax],ebx
 
         ; Rate scale ptr
-        mov     edx, [_MV_Rate]
+        ; mov     edx, [_MV_Rate]
         mov     eax,apatch5+2                   ; convice nasm to modify code...
         mov     [eax],edx
         mov     eax,apatch6+2                   ; convice nasm to modify code...
@@ -101,7 +110,6 @@ _MV_Mix8BitMono:
         mov     edi, [_MV_MixDestination]       ; Get the position to write to
 
         ; Number of samples to mix
-        mov     ecx, [_MV_Length]
         shr     ecx, 1                          ; double sample count
         cmp     ecx, 0
         je      short exit8m
@@ -169,6 +177,10 @@ apatch8:
         mov     [_MV_MixPosition], ebp          ; return position
 exit8m:
         popad
+; ---------- Function body -end------
+        popad
+        nop
+        pop ebp
         ret
 
 
@@ -178,14 +190,28 @@ exit8m:
 ;
 ;================
 
+; eax - position
+; edx - rate
+; ebx - start
+; ecx - number of samples to mix
+
 global    _MV_Mix8BitStereo
 _MV_Mix8BitStereo:
+; Init function
+        push ebp
+        mov ebp, esp
 
         pushad
+        mov eax, [ebp + 8]      ; position
+        mov edx, [ebp + 12]     ; rate
+        mov ebx, [ebp + 16]     ; start
+        mov ecx, [ebp + 20]     ; length
+; ---------- Function body ----------
 
-        mov     ebp, [_MV_Position]
+        pushad
+        mov     ebp, eax
 
-        mov     esi, [_MV_Start]                ; Source pointer
+        mov     esi, ebx                        ; Source pointer
 
         ; Sample size
         mov     ebx, [_MV_SampleSize]
@@ -209,7 +235,6 @@ _MV_Mix8BitStereo:
         mov     [eax],ebx
 
         ; Rate scale ptr
-        mov     edx, [_MV_Rate]
         mov     eax,bpatch3+2                   ; convice nasm to modify code...
         mov     [eax],edx
 
@@ -224,7 +249,6 @@ _MV_Mix8BitStereo:
         mov     edi, [_MV_MixDestination]       ; Get the position to write to
 
         ; Number of samples to mix
-        mov     ecx, [_MV_Length]
         cmp     ecx, 0
         je      short exit8S
 
@@ -279,6 +303,10 @@ bpatch8:
 
 exit8S:
         popad
+; ---------- Function body -end------
+        popad
+        nop
+        pop ebp
         ret
 
 
@@ -288,14 +316,29 @@ exit8S:
 ;
 ;================
 
+; eax - position
+; edx - rate
+; ebx - start
+; ecx - number of samples to mix
+
 global    _MV_Mix16BitMono
 _MV_Mix16BitMono:
+; Init function
+        push ebp
+        mov ebp, esp
+
+        pushad
+        mov eax, [ebp + 8]      ; position
+        mov edx, [ebp + 12]     ; rate
+        mov ebx, [ebp + 16]     ; start
+        mov ecx, [ebp + 20]     ; length
+; ---------- Function body ----------
 ; Two at once
         pushad
 
-        mov     ebp, [_MV_Position]
+        mov     ebp, eax
 
-        mov     esi, [_MV_Start]                ; Source pointer
+        mov     esi, ebx                        ; Source pointer
 
         ; Sample size
         mov     ebx, [_MV_SampleSize]
@@ -315,7 +358,6 @@ _MV_Mix16BitMono:
         mov     [eax],ebx
 
         ; Rate scale ptr
-        mov     edx, [_MV_Rate]
         mov     eax,cpatch3+2                   ; convice nasm to modify code...
         mov     [eax],edx
         mov     eax,cpatch4+2                   ; convice nasm to modify code...
@@ -324,7 +366,6 @@ _MV_Mix16BitMono:
         mov     edi, [_MV_MixDestination]       ; Get the position to write to
 
         ; Number of samples to mix
-        mov     ecx, [_MV_Length]
         shr     ecx, 1                          ; double sample count
         cmp     ecx, 0
         je      exit16M
@@ -406,6 +447,10 @@ cpatch7:
         mov     [_MV_MixPosition], ebp          ; return position
 exit16M:
         popad
+; ---------- Function body -end------
+        popad
+        nop
+        pop ebp
         ret
 
 
@@ -415,14 +460,28 @@ exit16M:
 ;
 ;================
 
+; eax - position
+; edx - rate
+; ebx - start
+; ecx - number of samples to mix
+
 global    _MV_Mix16BitStereo
 _MV_Mix16BitStereo:
+; Init function
+        push ebp
+        mov ebp, esp
 
         pushad
+        mov eax, [ebp + 8]      ; position
+        mov edx, [ebp + 12]     ; rate
+        mov ebx, [ebp + 16]     ; start
+        mov ecx, [ebp + 20]     ; length
+; ---------- Function body ----------
 
-        mov     ebp, [_MV_Position]
+        pushad
+        mov     ebp, eax
 
-        mov     esi, [_MV_Start]                ; Source pointer
+        mov     esi, ebx                        ; Source pointer
 
         ; Sample size
         mov     ebx, [_MV_SampleSize]
@@ -446,14 +505,12 @@ _MV_Mix16BitStereo:
         mov     [eax],ebx
 
         ; Rate scale ptr
-        mov     edx, [_MV_Rate]
         mov     eax,dpatch3+2                   ; convice nasm to modify code...
         mov     [eax],edx
 
         mov     edi, [_MV_MixDestination]       ; Get the position to write to
 
         ; Number of samples to mix
-        mov     ecx, [_MV_Length]
         cmp     ecx, 0
         je      exit16S
 
@@ -522,4 +579,8 @@ dpatch6:
         mov     [_MV_MixPosition], ebp          ; return position
 exit16S:
         popad
+; ---------- Function body -end------
+        popad
+        nop
+        pop ebp
         ret

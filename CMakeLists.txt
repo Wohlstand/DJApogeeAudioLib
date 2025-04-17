@@ -62,7 +62,6 @@ add_library(ass_audio STATIC
     # source/mv_mix6.asm
     source/mv_mix16.asm
     source/mvreverb.asm
-    source/multvcas.c
 )
 
 target_compile_definitions(ass_audio PRIVATE -DULTRASOUND_OFF -DAWE32_OFF)

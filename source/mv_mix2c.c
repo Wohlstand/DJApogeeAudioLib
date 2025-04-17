@@ -41,7 +41,7 @@ extern int MV_RightChannelOffset;
 
 void MV_Mix8BitMono2C
    (
-   unsigned long position, unsigned long rate, uint8_t *start, unsigned long length
+   uint32_t position, uint32_t rate, uint8_t *start, uint32_t length
    )
 
    {
@@ -100,7 +100,7 @@ void MV_Mix8BitMono2C
 
 void MV_Mix8BitStereo2C
    (
-   unsigned long position, unsigned long rate, uint8_t *start, unsigned long length
+   uint32_t position, uint32_t rate, uint8_t *start, uint32_t length
    )
 
    {
@@ -144,7 +144,7 @@ void MV_Mix8BitStereo2C
 
 void MV_Mix16BitMono2C
    (
-   unsigned long position, unsigned long rate, uint8_t *start, unsigned long length
+   uint32_t position, uint32_t rate, uint8_t *start, uint32_t length
    )
 
    {
@@ -222,7 +222,7 @@ void MV_Mix16BitMono2C
 
 void MV_Mix16BitStereo2C
    (
-   unsigned long position, unsigned long rate, uint8_t *start, unsigned long length
+   uint32_t position, uint32_t rate, uint8_t *start, uint32_t length
    )
 
    {
@@ -283,7 +283,7 @@ void MV_Mix16BitStereo2C
 
 void MV_Mix8BitMono162C
    (
-   unsigned long position, unsigned long rate, uint8_t *start, unsigned long length
+   uint32_t position, uint32_t rate, uint8_t *start, uint32_t length
    )
 
    {
@@ -345,7 +345,7 @@ void MV_Mix8BitMono162C
 
 void MV_Mix8BitStereo162C
    (
-   unsigned long position, unsigned long rate, uint8_t *start, unsigned long length
+   uint32_t position, uint32_t rate, uint8_t *start, uint32_t length
    )
 
    {
@@ -392,7 +392,7 @@ void MV_Mix8BitStereo162C
 
 void MV_Mix16BitMono162C
    (
-   unsigned long position, unsigned long rate, uint8_t *start, unsigned long length
+   uint32_t position, uint32_t rate, uint8_t *start, uint32_t length
    )
 
    {
@@ -445,7 +445,7 @@ void MV_Mix16BitMono162C
 
 void MV_Mix16BitStereo162C
    (
-   unsigned long position, unsigned long rate, uint8_t *start, unsigned long length
+   uint32_t position, uint32_t rate, uint8_t *start, uint32_t length
    )
 
    {

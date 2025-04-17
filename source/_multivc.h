@@ -233,7 +233,19 @@ static void       MV_CalcPanTable( void );
    outp (ATR_INDEX,color);   \
    }
 
-void ClearBuffer_DW( void *ptr, unsigned data, int length );
+static __attribute__((always_inline)) inline void ClearBuffer_DW
+   (
+   void *ptr, unsigned data, int length
+   )
+
+   {
+   int32_t i;
+
+   for( i = 0; i < length; i++ )
+      {
+      ((uint32_t *)ptr)[i] = data;
+      }
+   }
 
 // #pragma aux ClearBuffer_DW = \
 //    "cld",                    \
@@ -244,68 +256,35 @@ void ClearBuffer_DW( void *ptr, unsigned data, int length );
 //    "pop    es",              \
 // parm [ edi ] [ eax ] [ ecx ] modify exact [ ecx edi ];
 
-extern void MV_Mix8BitMono_Wrapper( unsigned long position, unsigned long rate, uint8_t *start, unsigned long length );
-extern void MV_Mix8BitStereo_Wrapper( unsigned long position, unsigned long rate, uint8_t *start, unsigned long length );
-extern void MV_Mix16BitMono_Wrapper( unsigned long position, unsigned long rate, uint8_t *start, unsigned long length );
-extern void MV_Mix16BitStereo_Wrapper( unsigned long position, unsigned long rate, uint8_t *start, unsigned long length );
+extern void MV_Mix8BitMono( uint32_t position, uint32_t rate, uint8_t *start, uint32_t length );
+extern void MV_Mix8BitStereo( uint32_t position, uint32_t rate, uint8_t *start, uint32_t length );
+extern void MV_Mix16BitMono( uint32_t position, uint32_t rate, uint8_t *start, uint32_t length );
+extern void MV_Mix16BitStereo( uint32_t position, uint32_t rate, uint8_t *start, uint32_t length );
 
-extern void MV_Mix16BitMono16_Wrapper( unsigned long position, unsigned long rate, uint8_t *start, unsigned long length );
-extern void MV_Mix8BitMono16_Wrapper( unsigned long position, unsigned long rate, uint8_t *start, unsigned long length );
-extern void MV_Mix8BitStereo16_Wrapper( unsigned long position, unsigned long rate, uint8_t *start, unsigned long length );
-extern void MV_Mix16BitStereo16_Wrapper( unsigned long position, unsigned long rate, uint8_t *start, unsigned long length );
+extern void MV_Mix16BitMono16( uint32_t position, uint32_t rate, uint8_t *start, uint32_t length );
+extern void MV_Mix8BitMono16( uint32_t position, uint32_t rate, uint8_t *start, uint32_t length );
+extern void MV_Mix8BitStereo16( uint32_t position, uint32_t rate, uint8_t *start, uint32_t length );
+extern void MV_Mix16BitStereo16( uint32_t position, uint32_t rate, uint8_t *start, uint32_t length );
 
-void MV_16BitReverb_Wrapper( uint8_t *src, uint8_t *dest, VOLUME16 *volume, int count );
+void MV_16BitReverb( uint8_t *src, uint8_t *dest, VOLUME16 *volume, int count );
 // #pragma aux MV_16BitReverb parm [eax] [edx] [ebx] [ecx] modify exact [eax ebx ecx edx esi edi]
-void MV_8BitReverb_Wrapper( uint8_t *src, uint8_t *dest, VOLUME16 *volume, int count );
+void MV_8BitReverb( uint8_t *src, uint8_t *dest, VOLUME16 *volume, int count );
 // #pragma aux MV_8BitReverb parm [eax] [edx] [ebx] [ecx] modify exact [eax ebx ecx edx esi edi]
-void MV_16BitReverbFast_Wrapper( uint8_t *src, uint8_t *dest, int count, int shift );
+void MV_16BitReverbFast( uint8_t *src, uint8_t *dest, int count, int shift );
 // #pragma aux MV_16BitReverbFast parm [eax] [edx] [ebx] [ecx] modify exact [eax ebx ecx edx esi edi]
-void MV_8BitReverbFast_Wrapper( uint8_t *src, uint8_t *dest, int count, int shift );
+void MV_8BitReverbFast( uint8_t *src, uint8_t *dest, int count, int shift );
 // #pragma aux MV_8BitReverbFast parm [eax] [edx] [ebx] [ecx] modify exact [eax ebx ecx edx esi edi]
 
-#ifndef MULTIVOC_ASM_IMP
-#define MV_Mix8BitMono MV_Mix8BitMono_Wrapper
-#define MV_Mix8BitStereo MV_Mix8BitStereo_Wrapper
-#define MV_Mix16BitMono MV_Mix16BitMono_Wrapper
-#define MV_Mix16BitStereo MV_Mix16BitStereo_Wrapper
-
-#define MV_Mix8BitMono16 MV_Mix8BitMono16_Wrapper
-#define MV_Mix8BitStereo16 MV_Mix8BitStereo16_Wrapper
-#define MV_Mix16BitMono16 MV_Mix16BitMono16_Wrapper
-#define MV_Mix16BitStereo16 MV_Mix16BitStereo16_Wrapper
-
-#define MV_16BitReverb MV_16BitReverb_Wrapper
-#define MV_8BitReverb MV_8BitReverb_Wrapper
-#define MV_16BitReverbFast MV_16BitReverbFast_Wrapper
-#define MV_8BitReverbFast MV_8BitReverbFast_Wrapper
-
-#else
-extern void MV_Mix8BitMono(void);
-extern void MV_Mix8BitStereo(void);
-extern void MV_Mix16BitMono(void);
-extern void MV_Mix16BitStereo(void);
-
-extern void MV_Mix8BitMono16(void);
-extern void MV_Mix8BitStereo16(void);
-extern void MV_Mix16BitMono16(void);
-extern void MV_Mix16BitStereo16(void);
-
-extern void MV_16BitReverb(void);
-extern void MV_8BitReverb(void);
-extern void MV_16BitReverbFast(void);
-extern void MV_8BitReverbFast(void);
-#endif
 
 // Stereo sources
+void MV_Mix8BitMono2C( uint32_t position, uint32_t rate, uint8_t *start, uint32_t length );
+void MV_Mix8BitStereo2C( uint32_t position, uint32_t rate, uint8_t *start, uint32_t length );
+void MV_Mix16BitMono2C( uint32_t position, uint32_t rate, uint8_t *start, uint32_t length );
+void MV_Mix16BitStereo2C( uint32_t position, uint32_t rate, uint8_t *start, uint32_t length );
 
-void MV_Mix8BitMono2C( unsigned long position, unsigned long rate, uint8_t *start, unsigned long length );
-void MV_Mix8BitStereo2C( unsigned long position, unsigned long rate, uint8_t *start, unsigned long length );
-void MV_Mix16BitMono2C( unsigned long position, unsigned long rate, uint8_t *start, unsigned long length );
-void MV_Mix16BitStereo2C( unsigned long position, unsigned long rate, uint8_t *start, unsigned long length );
-
-void MV_Mix8BitMono162C( unsigned long position, unsigned long rate, uint8_t *start, unsigned long length );
-void MV_Mix8BitStereo162C( unsigned long position, unsigned long rate, uint8_t *start, unsigned long length );
-void MV_Mix16BitMono162C( unsigned long position, unsigned long rate, uint8_t *start, unsigned long length );
-void MV_Mix16BitStereo162C( unsigned long position, unsigned long rate, uint8_t *start, unsigned long length );
+void MV_Mix8BitMono162C( uint32_t position, uint32_t rate, uint8_t *start, uint32_t length );
+void MV_Mix8BitStereo162C( uint32_t position, uint32_t rate, uint8_t *start, uint32_t length );
+void MV_Mix16BitMono162C( uint32_t position, uint32_t rate, uint8_t *start, uint32_t length );
+void MV_Mix16BitStereo162C( uint32_t position, uint32_t rate, uint8_t *start, uint32_t length );
 
 #endif

@@ -28,12 +28,6 @@ cpu 386
         ; MASM
         ; ALIGN 4
 
-extern   _MV_Src
-extern   _MV_Dest
-extern   _MV_Volume
-extern   _MV_Count
-extern   _MV_Shift
-
 
 %ifidn __OUTPUT_FORMAT__, coff
 section .text public class=CODE USE32
@@ -56,13 +50,16 @@ align 4
 
 global _MV_16BitReverb
 _MV_16BitReverb:
+; Init function
+        push ebp
+        mov ebp, esp
+
         pushad
-
-        mov     eax, [_MV_Src]
-        mov     edx, [_MV_Dest]
-        mov     ecx, [_MV_Count]
-        mov     ebx, [_MV_Volume]
-
+        mov eax, [ebp + 8]      ; source position
+        mov edx, [ebp + 12]     ; destination position
+        mov ebx, [ebp + 16]     ; Volume table
+        mov ecx, [ebp + 20]     ; number of samples
+; ---------- Function body ----------
         mov     esi, eax
         lea     edi, [edx - 2]
 
@@ -86,7 +83,10 @@ rev16loop:
         mov     [edi], ax                       ; write new sample to destination
         jnz     rev16loop                       ; loop
 
+; ---------- Function body -end------
         popad
+        nop
+        pop ebp
         ret
 
 
@@ -103,13 +103,16 @@ rev16loop:
 
 global _MV_8BitReverb
 _MV_8BitReverb:
+; Init function
+        push ebp
+        mov ebp, esp
+
         pushad
-
-        mov     eax, [_MV_Src]
-        mov     edx, [_MV_Dest]
-        mov     ebx, [_MV_Volume]
-        mov     ecx, [_MV_Count]
-
+        mov eax, [ebp + 8]      ; source position
+        mov edx, [ebp + 12]     ; destination position
+        mov ebx, [ebp + 16]     ; Volume table
+        mov ecx, [ebp + 20]     ; number of samples
+; ---------- Function body ----------
         mov     esi, eax
         lea     edi, [edx - 1]
 
@@ -132,7 +135,10 @@ rev8loop:
         mov     [edi], al                       ; write new sample to destination
         jnz     rev8loop                        ; loop
 
+; ---------- Function body -end------
         popad
+        nop
+        pop ebp
         ret
 
 
@@ -149,17 +155,22 @@ rev8loop:
 
 global _MV_16BitReverbFast:
 _MV_16BitReverbFast:
-        pushad
+; Init function
+        push ebp
+        mov ebp, esp
 
-        mov     esi, [_MV_Src]
+        pushad
+        mov eax, [ebp + 8]      ; source position
+        mov edx, [ebp + 12]     ; destination position
+        mov ebx, [ebp + 16]     ; number of samples
+        mov ecx, [ebp + 20]     ; shift
+; ---------- Function body ----------
+
+        mov     esi, eax
         mov     eax,rpatch16+3
 
         mov     [eax],cl
-        mov     edx, [_MV_Dest]
         lea     edi, [edx - 2]
-
-        mov     ebx, [_MV_Count]
-        mov     ecx, [_MV_Shift]
 
         ALIGN 4
 frev16loop:
@@ -175,7 +186,10 @@ rpatch16:
 
         jnz     frev16loop                      ; loop
 
+; ---------- Function body -end------
         popad
+        nop
+        pop ebp
         ret
 
 
@@ -192,15 +206,21 @@ rpatch16:
 
 global _MV_8BitReverbFast
 _MV_8BitReverbFast:
-        pushad
+; Init function
+        push ebp
+        mov ebp, esp
 
-        mov     esi, [_MV_Src]
+        pushad
+        mov eax, [ebp + 8]      ; source position
+        mov edx, [ebp + 12]     ; destination position
+        mov ebx, [ebp + 16]     ; number of samples
+        mov ecx, [ebp + 20]     ; shift
+; ---------- Function body ----------
+
+        mov     esi, eax
         mov     eax,rpatch8+2
 
-        mov     ebx, [_MV_Count]
-        mov     ecx, [_MV_Shift]
-
-        mov     edi, [_MV_Dest]
+        mov     edi, edx
         mov     edx, 80h
 
         mov     [eax],cl
@@ -232,5 +252,8 @@ rpatch8:
         mov     [edi], al                       ; write new sample to destination
         jnz     frev8loop                       ; loop
 
+; ---------- Function body -end------
         popad
+        nop
+        pop ebp
         ret
