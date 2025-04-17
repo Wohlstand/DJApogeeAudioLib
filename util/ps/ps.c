@@ -30,7 +30,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <conio.h>
 #include <dos.h>
+#ifdef __DJGPP__
 #include <sys/nearptr.h>
+#endif
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -64,7 +66,7 @@ int SoundCardNums[] =
    SoundScape, UltraSound, SoundSource, TandySoundSource
    };
 
-extern void  USER_InitArgs(int argc, char **argv);
+// extern void  USER_InitArgs(int argc, char **argv);
 
 /*---------------------------------------------------------------------
    Function: main
@@ -95,7 +97,9 @@ int main
    char  filename[ 128 ];
    char ch;
 
+#ifdef __DJGPP__
    USER_InitArgs(argc, argv);
+#endif
 
    printf( "\nPS Version 1.0 by Jim Dose\n" );
 
@@ -118,7 +122,9 @@ int main
       return 0;
       }
 
+#ifdef __DJGPP__
    __djgpp_nearptr_enable();
+#endif
 
    // Default is Sound Blaster
    card     = 0;

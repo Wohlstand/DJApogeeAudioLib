@@ -7,3 +7,4 @@ build/
 *.LIB
 *.a
 *.A
+util/ps/ps.exe
