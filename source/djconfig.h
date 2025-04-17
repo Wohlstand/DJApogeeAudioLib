@@ -20,6 +20,7 @@
 #define DJCONFIG_H
 
 #include <dpmi.h>
+#include <pc.h>
 #include <go32.h>
 #include <stdint.h>
 #include <sys/nearptr.h>
