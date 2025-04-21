@@ -88,8 +88,10 @@ int main
 
    {
    int card;
+   int voice_alloc_mode;
    int address;
    int status;
+
    uint8_t *SongPtr = NULL;
    const char *ptr;
    char  filename[ 128 ];
@@ -111,7 +113,8 @@ int main
       printf(
          "Usage: PM [ midifile ] CARD=[ card number ] MPU=[ port address in hex ]\n"
          "          TIMBRE=[ timbre file ] TIME=[minutes:seconds:milliseconds]\n"
-         "          POSITION=[measure:beat:tick]\n\n"
+         "          POSITION=[measure:beat:tick]\n"
+         "          VOICEALLOC=[ 0=cycle, 1=same timbre ]\n\n"
          "   card number = \n" );
       for( index = 0; index < NUMCARDS; index++ )
          {
@@ -145,6 +148,13 @@ int main
       {
       sscanf( ptr, "%s", timbrefile );
       LoadTimbres( timbrefile );
+      }
+
+   ptr = GetUserText( "VOICEALLOC", argc, argv );
+   if ( ptr != NULL )
+      {
+      sscanf( ptr, "%d", &voice_alloc_mode );
+      MUSIC_SetALVoiceAllocMode( voice_alloc_mode );
       }
 
    ptr = GetUserText( "POSITION", argc, argv );

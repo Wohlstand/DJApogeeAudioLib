@@ -56,5 +56,6 @@ void AL_ProgramChange( int channel, int patch );
 void AL_SetPitchBend( int channel, int lsb, int msb );
 int  AL_DetectFM( void );
 void AL_RegisterTimbreBank( unsigned char *timbres );
+void AL_SetVoiceAllocMode( int mode );
 
 #endif

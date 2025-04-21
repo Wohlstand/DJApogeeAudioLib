@@ -50,6 +50,12 @@ enum MUSIC_ERRORS
    MUSIC_DPMI_Error
    };
 
+enum AL_VOICE_ALLOC_MODE
+   {
+   AL_VOICE_ALLOC_CYCLE = 0,
+   AL_VOICE_ALLOC_SAME_TIMBRE
+   };
+
 typedef struct
    {
    unsigned long tickposition;
@@ -88,5 +94,6 @@ int   MUSIC_FadeActive( void );
 void  MUSIC_StopFade( void );
 void  MUSIC_RerouteMidiChannel( int channel, int /*cdecl*/ ( *function )( int event, int c1, int c2 ) );
 void  MUSIC_RegisterTimbreBank( unsigned char *timbres );
+void  MUSIC_SetALVoiceAllocMode( int mode );
 
 #endif

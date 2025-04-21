@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 **********************************************************************/
 
 #include <conio.h>
+#include <stdio.h>
 #include <dos.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -132,6 +133,14 @@ static int VoiceReserved[ NUM_VOICES * 2 ] =
    {
    FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
    FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE
+   };
+
+static int VoiceAllocMode = 0;
+
+static int VoiceRecentTimbre[ NUM_VOICES * 2 ] =
+   {
+   0, 0, 0, 0, 0, 0, 0, 0, 0,
+   0, 0, 0, 0, 0, 0, 0, 0, 0
    };
 
 static VOICE     Voice[ NUM_VOICES * 2 ];
@@ -516,6 +525,28 @@ static int AL_AllocVoice
       }
 
    return( AL_VoiceNotFound );
+   }
+
+static int AL_AllocVoiceByTimbre
+   (
+   int timbre
+   )
+
+   {
+   int voice;
+   VOICE *it;
+
+   for ( it = Voice_Pool.start; it != NULL; it = it->next )
+      {
+      if ( VoiceRecentTimbre[ it->num ] == timbre )
+         {
+         voice = it->num;
+         LL_Remove( VOICE, &Voice_Pool, &Voice[ voice ] );
+         return( voice );
+         }
+      }
+
+   return( AL_AllocVoice() );
    }
 
 
@@ -1152,6 +1183,7 @@ void AL_NoteOn
 
    {
    int voice;
+   int dst_timbre;
 
    // We only play channels 1 through 10
    if ( channel > AL_MaxMidiChannel )
@@ -1165,7 +1197,9 @@ void AL_NoteOn
       return;
       }
 
-   voice = AL_AllocVoice();
+   dst_timbre = channel != 9 ? Channel[ channel ].Timbre : key + 128;
+
+   voice = VoiceAllocMode == 1 ? AL_AllocVoiceByTimbre( dst_timbre ) : AL_AllocVoice();
 
    if ( voice == AL_VoiceNotFound )
       {
@@ -1180,6 +1214,7 @@ void AL_NoteOn
          }
       }
 
+   VoiceRecentTimbre[ voice ] = dst_timbre;
    Voice[ voice ].key      = key;
    Voice[ voice ].channel  = channel;
    Voice[ voice ].velocity = velocity;
@@ -1189,6 +1224,7 @@ void AL_NoteOn
 
    AL_SetVoiceTimbre( voice );
    AL_SetVoiceVolume( voice );
+   AL_SetVoicePan( voice );
    AL_SetVoicePitch( voice );
    }
 
@@ -1647,4 +1683,14 @@ void AL_RegisterTimbreBank
       ADLIB_TimbreBank[ i ].Transpose  = *( signed char * )( timbres++ );
       ADLIB_TimbreBank[ i ].Velocity   = *( signed char * )( timbres++ );
       }
+   }
+
+
+void AL_SetVoiceAllocMode
+   (
+   int mode
+   )
+
+   {
+   VoiceAllocMode = mode;
    }

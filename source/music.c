@@ -1069,3 +1069,13 @@ void MUSIC_RegisterTimbreBank
    {
    AL_RegisterTimbreBank( timbres );
    }
+
+
+void  MUSIC_SetALVoiceAllocMode
+   (
+   int mode
+   )
+
+   {
+   AL_SetVoiceAllocMode( mode );
+   }
