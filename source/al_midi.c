@@ -253,7 +253,7 @@ static void AL_SetVoiceTimbre
 
    channel = Voice[ voice ].channel;
 
-   if ( channel == 9 )
+   if ( Channel[ channel ].isDrum )
       {
       patch = Voice[ voice ].key + 128;
       }
@@ -611,7 +611,7 @@ static void AL_SetVoicePitch
    voc  = ( voice >= NUM_VOICES ) ? voice - NUM_VOICES : voice;
    channel = Voice[ voice ].channel;
 
-   if ( channel == 9 )
+   if ( Channel[ channel ].isDrum )
       {
       patch = Voice[ voice ].key + 128;
       note  = ADLIB_TimbreBank[ patch ].Transpose;
@@ -831,14 +831,42 @@ static void AL_ResetVoicesPart
    }
 
 
+/*---------------------------------------------------------------------
+   Function: AL_UpdateBendMult
+
+   Refreshes the pitch bend factor
+---------------------------------------------------------------------*/
+
 static void AL_UpdateBendMult
    (
    int channel
    )
+
    {
    int cent = Channel[ channel ].PitchBendSemiTones * 128 + Channel[ channel ].PitchBendHundreds;
    Channel[ channel ].PitchBendMultiplier = cent;
    }
+
+
+
+/*---------------------------------------------------------------------
+   Function: AL_UpdateBanks
+
+   Checks if addition drum set is requested by the XG bank number
+---------------------------------------------------------------------*/
+
+static void AL_UpdateBanks
+   (
+   int channel
+   )
+
+   {
+   if ( channel != 9 )
+      {
+      Channel[ channel ].isDrum = ((Channel[ channel ].bankLo == 0) && (Channel[ channel ].bankHi == 127)) ? 1 : 0;
+      }
+   }
+
 
 
 static void AL_ResetVoices
@@ -856,7 +884,10 @@ static void AL_ResetVoices
       {
       Channel[ index ].Voices.start    = NULL;
       Channel[ index ].Voices.end      = NULL;
+      Channel[ index ].bankLo          = 0;
+      Channel[ index ].bankHi          = 0;
       Channel[ index ].Timbre          = 0;
+      Channel[ index ].isDrum          = (index == 9);
       Channel[ index ].Pitchbend       = 0;
       // Channel[ index ].KeyOffset       = 0;
       // Channel[ index ].KeyDetune       = 0;
@@ -1197,7 +1228,7 @@ void AL_NoteOn
       return;
       }
 
-   dst_timbre = channel != 9 ? Channel[ channel ].Timbre : key + 128;
+   dst_timbre = Channel[ channel ].isDrum ? key + 128 : Channel[ channel ].Timbre;
 
    voice = VoiceAllocMode == 1 ? AL_AllocVoiceByTimbre( dst_timbre ) : AL_AllocVoice();
 
@@ -1270,6 +1301,16 @@ void AL_ControlChange
 
    switch( type )
       {
+      case MIDI_BANK_LSB:
+         Channel[ channel ].bankLo = data;
+         AL_UpdateBanks( channel );
+         break;
+
+      case MIDI_BANK_MSB:
+         Channel[ channel ].bankHi = data;
+         AL_UpdateBanks( channel );
+         break;
+
       case MIDI_VOLUME :
          AL_SetChannelVolume( channel, data );
          break;

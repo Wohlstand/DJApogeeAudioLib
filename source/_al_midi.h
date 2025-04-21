@@ -58,6 +58,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define channel_aftertouch   0xd0
 #define pitch_wheel          0xe0
 
+#define MIDI_BANK_MSB        0
+#define MIDI_BANK_LSB        0x20
 #define MIDI_VOLUME          7
 #define MIDI_PAN             10
 #define MIDI_EXPRESSION      11
@@ -135,7 +137,10 @@ typedef struct
 typedef struct
    {
    VOICELIST Voices;
+   unsigned char bankLo;
+   unsigned char bankHi;
    int       Timbre;
+   int       isDrum;
    int       Pitchbend;
    // int       KeyOffset;
    // unsigned  KeyDetune;
