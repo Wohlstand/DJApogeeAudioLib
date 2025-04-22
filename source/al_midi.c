@@ -830,6 +830,11 @@ static void AL_ResetVoicesPart
          LL_AddToTail( VOICE, &Voice_Pool, &Voice[ index ] );
          }
       }
+   for( index = 0; index < NUM_CHANNELS; index++ )
+      {
+      Channel[ index ].Voices.start    = NULL;
+      Channel[ index ].Voices.end      = NULL;
+      }
    }
 
 
