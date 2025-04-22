@@ -818,6 +818,8 @@ static void AL_ResetVoicesPart
       {
       if ( VoiceReserved[ index ] == FALSE )
          {
+         Voice[ index ].prev = NULL;
+         Voice[ index ].next = NULL;
          Voice[ index ].num = index;
          Voice[ index ].key = 0;
          Voice[ index ].velocity = 0;
@@ -1345,7 +1347,7 @@ void AL_ControlChange
          Channel[ channel ].PitchBendSemiTones = 0;
          Channel[ channel ].PitchBendHundreds = 2;
          AL_UpdateBendMult ( channel );
-         AL_ResetVoicesPart();
+         // AL_ResetVoicesPart();
          break;
 
       case MIDI_RPN_MSB :
