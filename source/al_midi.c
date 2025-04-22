@@ -902,12 +902,12 @@ static void AL_ResetVoices
       Channel[ index ].Expression      = AL_DefaultChannelExpression;
       Channel[ index ].Pan             = 64;
       Channel[ index ].RPN             = 0;
-      Channel[ index ].PitchBendSemiTones = 0;
-      Channel[ index ].PitchBendHundreds = 2;
+      Channel[ index ].PitchBendSemiTones = 2;
+      Channel[ index ].PitchBendHundreds = 0;
       AL_UpdateBendMult( index );
       // Channel[ index ].PitchBendRange = AL_DefaultPitchBendRange;
-      Channel[ index ].PitchBendSemiTones = AL_DefaultPitchBendRange / 100;
-      Channel[ index ].PitchBendHundreds  = AL_DefaultPitchBendRange % 100;
+      // Channel[ index ].PitchBendSemiTones = AL_DefaultPitchBendRange % 100;
+      // Channel[ index ].PitchBendHundreds  = AL_DefaultPitchBendRange / 100;
       }
    }
 
@@ -1347,10 +1347,10 @@ void AL_ControlChange
          // AL_SetChannelVolume( channel, AL_DefaultChannelVolume );
          // AL_SetChannelPan( channel, 64 );
          AL_SetChannelExpression( channel, 127 );
-         AL_SetChannelDetune( channel, 0 );
+         // AL_SetChannelDetune( channel, 0 );
          Channel[ channel ].Pitchbend = 0;
-         Channel[ channel ].PitchBendSemiTones = 0;
-         Channel[ channel ].PitchBendHundreds = 2;
+         Channel[ channel ].PitchBendSemiTones = 2;
+         Channel[ channel ].PitchBendHundreds = 0;
          AL_UpdateBendMult ( channel );
          // AL_ResetVoicesPart();
          break;
