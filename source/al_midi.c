@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <dos.h>
 #include <stddef.h>
 #include <stdlib.h>
-//#include <math.h>
+#include <math.h>
 #include "a_dpmi.h"
 #include "interrup.h"
 #include "sndcards.h"
@@ -606,6 +606,7 @@ static void AL_SetVoicePitch
    int voc;
    int bendDec;
    int toneF;
+   int vibrato;
 
    port = Voice[ voice ].port;
    voc  = ( voice >= NUM_VOICES ) ? voice - NUM_VOICES : voice;
@@ -622,7 +623,13 @@ static void AL_SetVoicePitch
       note  = Voice[ voice ].key + ADLIB_TimbreBank[ patch ].Transpose;
       }
 
+   vibrato = max( Channel[ channel ].vibrato, Channel[ channel ].aftertouch );
+
    toneF = (note << 20) + (Channel[ channel ].Pitchbend * Channel[ channel ].PitchBendMultiplier);
+   if ( vibrato != 0 )
+      {
+      toneF += (int)((float)vibrato * Channel[ channel ].vib_depth * sin(Channel[ channel ].vib_pos) * BENDSENS_RANGE);
+      }
    bendDec = (toneF % BENDSENS_RANGE);
    toneI = toneF - bendDec;
 
@@ -908,6 +915,12 @@ static void AL_ResetVoices
       // Channel[ index ].PitchBendRange = AL_DefaultPitchBendRange;
       // Channel[ index ].PitchBendSemiTones = AL_DefaultPitchBendRange % 100;
       // Channel[ index ].PitchBendHundreds  = AL_DefaultPitchBendRange / 100;
+      Channel[ index ].vibrato         = 0;
+      Channel[ index ].aftertouch      = 0;
+      Channel[ index ].vib_pos         = 0.0f;
+      Channel[ index ].vib_speed       = 2 * 3.141592653f * 5.0f;
+      Channel[ index ].vib_depth       = 0.5f / 127;
+      Channel[ index ].vib_delay_us    = 0;
       }
    }
 
@@ -1285,6 +1298,21 @@ void AL_AllNotesOff
       }
    }
 
+void AL_ChannelAfterTouch
+   (
+   int channel,
+   int data
+   )
+
+   {
+   if ( channel > AL_MaxMidiChannel )
+      {
+      return;
+      }
+
+   Channel[ channel ].aftertouch = data;
+   }
+
 
 /*---------------------------------------------------------------------
    Function: AL_ControlChange
@@ -1308,6 +1336,10 @@ void AL_ControlChange
 
    switch( type )
       {
+      case MIDI_MODULATION:
+         Channel[ channel ].vibrato = data;
+         break;
+
       case MIDI_BANK_LSB:
          Channel[ channel ].bankLo = data;
          AL_UpdateBanks( channel );
@@ -1352,6 +1384,12 @@ void AL_ControlChange
          Channel[ channel ].PitchBendSemiTones = 2;
          Channel[ channel ].PitchBendHundreds = 0;
          AL_UpdateBendMult ( channel );
+         Channel[ channel ].vibrato = 0;
+         Channel[ channel ].aftertouch = 0;
+         Channel[ channel ].vib_pos = 0.0f;
+         Channel[ channel ].vib_speed = 2 * 3.141592653f * 5.0f;
+         Channel[ channel ].vib_depth = 0.5f / 127;
+         Channel[ channel ].vib_delay_us = 0;
          // AL_ResetVoicesPart();
          break;
 
@@ -1455,6 +1493,44 @@ void AL_SetPitchBend
       AL_SetVoicePitch( voice->num );
       voice = voice->next;
       }
+   }
+
+
+void AL_RunTimers
+   (
+   int rate
+   )
+
+   {
+   int index, has_notes, has_vibrato;
+   VOICE *it;
+   float delay;
+
+   delay = 1.0f / rate;
+
+   for( index = 0; index < NUM_CHANNELS; index++ )
+      {
+      has_notes = Channel[ index ].Voices.start != NULL;
+      has_vibrato = Channel[ index ].vibrato > 0 || Channel[ index ].aftertouch > 0;
+
+      if ( has_notes && has_vibrato )
+         {
+            it = Channel[ index ].Voices.start;
+            while( it != NULL )
+               {
+               AL_SetVoicePitch( it->num );
+               it = it->next;
+               }
+
+            Channel[ index ].vib_pos += delay * Channel[ index ].vib_speed;
+         }
+      else
+         {
+         Channel[ index ].vib_pos = 0;
+         }
+
+      }
+
    }
 
 

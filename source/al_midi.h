@@ -51,9 +51,11 @@ void AL_NoteOn( int channel, int key, int vel );
 //Turned off to test if it works with Watcom 10a
 //   #pragma aux AL_NoteOn frame;
 void AL_AllNotesOff( int channel );
+void AL_ChannelAfterTouch( int channel, int data );
 void AL_ControlChange( int channel, int type, int data );
 void AL_ProgramChange( int channel, int patch );
 void AL_SetPitchBend( int channel, int lsb, int msb );
+void AL_RunTimers( int rate );
 int  AL_DetectFM( void );
 void AL_RegisterTimbreBank( unsigned char *timbres );
 void AL_SetVoiceAllocMode( int mode );

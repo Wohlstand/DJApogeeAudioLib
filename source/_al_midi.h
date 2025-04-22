@@ -60,6 +60,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define MIDI_BANK_MSB        0
 #define MIDI_BANK_LSB        0x20
+#define MIDI_MODULATION      1
 #define MIDI_VOLUME          7
 #define MIDI_PAN             10
 #define MIDI_EXPRESSION      11
@@ -154,6 +155,12 @@ typedef struct
    short     PitchBendHundreds;
    // short     PitchBendRange;
    int       PitchBendMultiplier;
+   unsigned char vibrato;
+   unsigned char aftertouch;
+   float     vib_pos;
+   float     vib_speed;
+   float     vib_depth;
+   int       vib_delay_us;
    } CHANNEL;
 
 typedef struct

@@ -711,6 +711,7 @@ int MUSIC_InitAWE32
    Funcs->LoadPatch         = NULL;
    Funcs->SetVolume         = NULL;
    Funcs->GetVolume         = NULL;
+   Funcs->RunTimers         = NULL;
 
    if ( BLASTER_CardHasMixer() )
       {
@@ -753,12 +754,13 @@ int MUSIC_InitFM
    Funcs->PolyAftertouch    = NULL;
    Funcs->ControlChange     = AL_ControlChange;
    Funcs->ProgramChange     = AL_ProgramChange;
-   Funcs->ChannelAftertouch = NULL;
+   Funcs->ChannelAftertouch = AL_ChannelAfterTouch;
    Funcs->PitchBend         = AL_SetPitchBend;
    Funcs->ReleasePatches    = NULL;
    Funcs->LoadPatch         = NULL;
    Funcs->SetVolume         = NULL;
    Funcs->GetVolume         = NULL;
+   Funcs->RunTimers         = AL_RunTimers;
 
    switch( card )
       {
@@ -852,6 +854,7 @@ int MUSIC_InitMidi
    Funcs->LoadPatch         = NULL;
    Funcs->SetVolume         = NULL;
    Funcs->GetVolume         = NULL;
+   Funcs->RunTimers         = NULL;
 
    if ( card == WaveBlaster )
       {
@@ -899,6 +902,7 @@ int MUSIC_InitGUS
    Funcs->LoadPatch         = NULL;//GUSMIDI_LoadPatch;
    Funcs->SetVolume         = GUSMIDI_SetVolume;
    Funcs->GetVolume         = GUSMIDI_GetVolume;
+   Funcs->RunTimers         = NULL;
 
    MIDI_SetMidiFuncs( Funcs );
 

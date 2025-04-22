@@ -714,6 +714,11 @@ static void test
          }
       }
 
+   if ( _MIDI_Funcs->RunTimers )
+      {
+      _MIDI_Funcs->RunTimers( Task->rate > 0 ? 1192030L / Task->rate : 0 );
+      }
+
    _MIDI_AdvanceTick();
    }
 

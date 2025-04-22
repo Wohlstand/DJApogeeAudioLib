@@ -68,6 +68,7 @@ typedef struct
    void ( *LoadPatch )( int number );
    void ( *SetVolume )( int volume );
    int  ( *GetVolume )( void );
+   void ( *RunTimers )( int rate );
    } midifuncs;
 
 void MIDI_RerouteMidiChannel( int channel, int cdecl ( *function )( int event, int c1, int c2 ) );
