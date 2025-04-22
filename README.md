@@ -16,12 +16,5 @@ This version __doesn't__ (yet) supports AWE32 and Gravis UltraSound because they
   - Fixed the support of WAV files with additional and misordered tags.
   - Stereo files now fully supported!
 
-## Known bugs
-- Can't correctly play stereo files (the support wasn't be here officially, old readme contains that note).
-- Distorted playback on stereo outputs.
-- It's unknown will Pro Audio Spectrum and SoundScape work as code wasn't tested on hardware nor emulator.
-- Stereo 16-bit gets played with increase tempo (looks like the x86box has a DMA buffer limit size or the bug in the code...).
-
-
 # Thanks
 Thanks to @nukeykt for the SoundScape testing!
