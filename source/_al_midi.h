@@ -68,6 +68,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define MIDI_ALL_SOUNDS_OFF  0x78
 #define MIDI_ALL_NOTES_OFF   0x7B
 #define MIDI_RESET_ALL_CONTROLLERS 0x79
+#define MIDI_NRPN_MSB              98
+#define MIDI_NRPN_LSB              99
 #define MIDI_RPN_MSB               100
 #define MIDI_RPN_LSB               101
 #define MIDI_DATAENTRY_MSB         6
@@ -151,8 +153,9 @@ typedef struct
    int       Pan;
    int       Detune;
    unsigned  RPN;
-   short     PitchBendSemiTones;
-   short     PitchBendHundreds;
+   unsigned  isNRPN;
+   short     PitchBendMSB;
+   short     PitchBendLSB;
    // short     PitchBendRange;
    int       PitchBendMultiplier;
    unsigned char vibrato;

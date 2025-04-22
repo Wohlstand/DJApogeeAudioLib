@@ -857,7 +857,7 @@ static void AL_UpdateBendMult
    )
 
    {
-   int cent = Channel[ channel ].PitchBendSemiTones * 128 + Channel[ channel ].PitchBendHundreds;
+   int cent = Channel[ channel ].PitchBendMSB * 128 + Channel[ channel ].PitchBendLSB;
    Channel[ channel ].PitchBendMultiplier = cent;
    }
 
@@ -909,8 +909,9 @@ static void AL_ResetVoices
       Channel[ index ].Expression      = AL_DefaultChannelExpression;
       Channel[ index ].Pan             = 64;
       Channel[ index ].RPN             = 0;
-      Channel[ index ].PitchBendSemiTones = 2;
-      Channel[ index ].PitchBendHundreds = 0;
+      Channel[ index ].isNRPN          = 0;
+      Channel[ index ].PitchBendMSB = 2;
+      Channel[ index ].PitchBendLSB = 0;
       AL_UpdateBendMult( index );
       // Channel[ index ].PitchBendRange = AL_DefaultPitchBendRange;
       // Channel[ index ].PitchBendSemiTones = AL_DefaultPitchBendRange % 100;
@@ -1381,8 +1382,8 @@ void AL_ControlChange
          AL_SetChannelExpression( channel, 127 );
          // AL_SetChannelDetune( channel, 0 );
          Channel[ channel ].Pitchbend = 0;
-         Channel[ channel ].PitchBendSemiTones = 2;
-         Channel[ channel ].PitchBendHundreds = 0;
+         Channel[ channel ].PitchBendMSB = 2;
+         Channel[ channel ].PitchBendLSB = 0;
          AL_UpdateBendMult ( channel );
          Channel[ channel ].vibrato = 0;
          Channel[ channel ].aftertouch = 0;
@@ -1393,20 +1394,34 @@ void AL_ControlChange
          // AL_ResetVoicesPart();
          break;
 
+      case MIDI_NRPN_MSB :
+         Channel[ channel ].RPN &= 0x00FF;
+         Channel[ channel ].RPN |= ( data & 0xFF ) << 8;
+         Channel[ channel ].isNRPN = 1;
+         break;
+
+      case MIDI_NRPN_LSB :
+         Channel[ channel ].RPN &= 0xFF00;
+         Channel[ channel ].RPN |= data & 0xFF;
+         Channel[ channel ].isNRPN = 1;
+         break;
+
       case MIDI_RPN_MSB :
          Channel[ channel ].RPN &= 0x00FF;
          Channel[ channel ].RPN |= ( data & 0xFF ) << 8;
+         Channel[ channel ].isNRPN = 0;
          break;
 
       case MIDI_RPN_LSB :
          Channel[ channel ].RPN &= 0xFF00;
          Channel[ channel ].RPN |= data & 0xFF;
+         Channel[ channel ].isNRPN = 0;
          break;
 
       case MIDI_DATAENTRY_MSB :
-         if ( Channel[ channel ].RPN == MIDI_PITCHBEND_RPN )
+         if ( !Channel[ channel ].isNRPN && Channel[ channel ].RPN == MIDI_PITCHBEND_RPN )
             {
-            Channel[ channel ].PitchBendSemiTones = data;
+            Channel[ channel ].PitchBendMSB = data;
             AL_UpdateBendMult ( channel );
             // Channel[ channel ].PitchBendRange     =
             //    Channel[ channel ].PitchBendSemiTones * 100 +
@@ -1415,9 +1430,9 @@ void AL_ControlChange
          break;
 
       case MIDI_DATAENTRY_LSB :
-         if ( Channel[ channel ].RPN == MIDI_PITCHBEND_RPN )
+         if ( !Channel[ channel ].isNRPN && Channel[ channel ].RPN == MIDI_PITCHBEND_RPN )
             {
-            Channel[ channel ].PitchBendHundreds = data;
+            Channel[ channel ].PitchBendLSB = data;
             AL_UpdateBendMult ( channel );
             // Channel[ channel ].PitchBendRange    =
             //    Channel[ channel ].PitchBendSemiTones * 100 +
