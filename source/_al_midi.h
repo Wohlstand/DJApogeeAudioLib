@@ -64,6 +64,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define MIDI_VOLUME          7
 #define MIDI_PAN             10
 #define MIDI_EXPRESSION      11
+#define MIDI_PEDAL           64
+#define MIDI_SOSTENUTO       66
+#define MIDI_SOFTPEDAL       67
 #define MIDI_DETUNE          94
 #define MIDI_ALL_SOUNDS_OFF  0x78
 #define MIDI_ALL_NOTES_OFF   0x7B
@@ -115,6 +118,14 @@ enum octaves
    OCTAVE_7 = 0x1C00
    };
 
+enum sustain
+   {
+   Sustain_None      = 0x00,
+   Sustain_Pedal     = 0x01,
+   Sustain_Sostenuto = 0x02,
+   Sustain_ANY       = Sustain_Pedal | Sustain_Sostenuto
+   };
+
 typedef struct VOICE
    {
    struct VOICE *next;
@@ -129,6 +140,8 @@ typedef struct VOICE
    int      timbre;
    int      port;
    unsigned status;
+   unsigned sustain;
+   unsigned long age;
    } VOICE;
 
 typedef struct
@@ -160,6 +173,8 @@ typedef struct
    int       PitchBendMultiplier;
    unsigned char vibrato;
    unsigned char aftertouch;
+   unsigned char pedal;
+   unsigned char softpedal;
    float     vib_pos;
    float     vib_speed;
    float     vib_depth;
@@ -187,7 +202,11 @@ static void AL_SetVoiceVolume( int voice );
 static int  AL_AllocVoice( void );
 static int  AL_GetVoice( int channel, int key );
 static void AL_SetVoicePitch( int voice );
+static void AL_SetChannelSostenuto( int channel );
+static void AL_VoiceOff( int num );
+static void AL_KillSustainedVoices( int channel, unsigned sustain );
 static void AL_SetChannelVolume( int channel, int volume );
+static void AL_SetChannelExpression( int channel, int expression );
 static void AL_SetChannelPan( int channel, int pan );
 static void AL_SetChannelDetune( int channel, int detune );
 

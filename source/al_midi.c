@@ -515,11 +515,41 @@ static int AL_AllocVoice
 
    {
    int voice;
+   int chan;
+   unsigned long maxage;
+   int chan_oldest;
+   int voice_oldest;
+   VOICE *it;
 
    if ( Voice_Pool.start )
       {
       voice = Voice_Pool.start->num;
       LL_Remove( VOICE, &Voice_Pool, &Voice[ voice ] );
+      return( voice );
+      }
+
+   maxage = 0;
+   voice_oldest = -1;
+   chan_oldest = -1;
+
+   for (chan = 0; chan < NUM_CHANNELS; ++chan)
+      {
+      for ( it = Channel[ chan ].Voices.start; it != NULL; it = it->next )
+         {
+         if ( it->age > maxage)
+            {
+            maxage = it->age;
+            voice_oldest = it->num;
+            chan_oldest = chan;
+            }
+         }
+      }
+
+   if ( voice_oldest >= 0 )
+      {
+      voice = voice_oldest;
+      AL_VoiceOff( voice );
+      LL_Remove( VOICE, &Channel[ chan_oldest ].Voices, &Voice[ voice ] );
       return( voice );
       }
 
@@ -569,7 +599,7 @@ static int AL_GetVoice
 
    while( voice != NULL )
       {
-      if ( voice->key == key )
+      if ( voice->key == key && voice->status != NOTE_OFF)
          {
          return( voice->num );
          }
@@ -698,6 +728,111 @@ static void AL_SetVoicePitch
 
 
 /*---------------------------------------------------------------------
+   Function: AL_SetChannelSostenuto
+
+   Marks active voices by sostenuto at the specified MIDI channel.
+---------------------------------------------------------------------*/
+
+static void AL_SetChannelSostenuto
+   (
+   int channel
+   )
+
+   {
+   VOICE *voice;
+
+   voice = Channel[ channel ].Voices.start;
+   while( voice != NULL )
+      {
+      voice->sustain |= Sustain_Sostenuto;
+      voice = voice->next;
+      }
+   }
+
+
+/*---------------------------------------------------------------------
+   Function: AL_VoiceOff
+
+   Sends the voice off command to the OPL2/3 chip.
+---------------------------------------------------------------------*/
+
+static void AL_VoiceOff
+   (
+   int num
+   )
+
+   {
+   int port;
+   int voc;
+
+   port = Voice[ num ].port;
+   voc  = ( num >= NUM_VOICES ) ? num - NUM_VOICES : num;
+
+   if ( AL_SendStereo )
+      {
+      AL_SendOutputToPort( AL_LeftPort, 0xB0 + num,
+         hibyte( Voice[ num ].pitchleft ) );
+      AL_SendOutputToPort( AL_RightPort, 0xB0 + num,
+         hibyte( Voice[ num ].pitchright ) );
+      }
+   else
+      {
+      AL_SendOutput( port, 0xB0 + voc, hibyte( Voice[ num ].pitchleft ) );
+      }
+   }
+
+
+/*---------------------------------------------------------------------
+   Function: AL_KillSustainedVoices
+
+   Offs sustained voices of sustain type at the specified MIDI channel.
+---------------------------------------------------------------------*/
+
+static void AL_KillSustainedVoices
+   (
+   int channel,
+   unsigned sustain
+   )
+
+   {
+   VOICE *voice;
+   int num;
+   int port;
+   int voc;
+
+   voice = Channel[ channel ].Voices.start;
+   while( voice != NULL )
+      {
+      if ( voice->status == NOTE_OFF && ( voice->sustain & sustain ) != Sustain_None )
+         {
+         voice->sustain &= ~sustain;
+
+         if ( voice->sustain == Sustain_None )
+            {
+            num = voice->num;
+            voice = voice->next;
+
+            Voice[ num ].age = 0;
+
+            AL_VoiceOff( num );
+            LL_Remove( VOICE, &Channel[ channel ].Voices, &Voice[ num ] );
+            if ( VoiceAllocMode == 1 )
+               {
+               LL_AddToHead( VOICE, &Voice_Pool, &Voice[ num ] );
+               }
+            else
+               {
+               LL_AddToTail( VOICE, &Voice_Pool, &Voice[ num ] );
+               }
+            continue;
+            }
+         }
+      voice = voice->next;
+      }
+   }
+
+
+/*---------------------------------------------------------------------
    Function: AL_SetChannelVolume
 
    Sets the volume of the specified MIDI channel.
@@ -724,6 +859,12 @@ static void AL_SetChannelVolume
       }
    }
 
+
+/*---------------------------------------------------------------------
+   Function: AL_SetChannelExpression
+
+   Sets the expression of the specified MIDI channel.
+---------------------------------------------------------------------*/
 
 static void AL_SetChannelExpression
    (
@@ -827,12 +968,14 @@ static void AL_ResetVoicesPart
          Voice[ index ].prev = NULL;
          Voice[ index ].next = NULL;
          Voice[ index ].num = index;
+         Voice[ index ].sustain = Sustain_None;
          Voice[ index ].key = 0;
          Voice[ index ].velocity = 0;
          Voice[ index ].channel = -1;
          Voice[ index ].timbre = -1;
          Voice[ index ].port = ( index < NUM_VOICES ) ? 0 : 1;
          Voice[ index ].status = NOTE_OFF;
+         Voice[ index ].age = 0;
          LL_AddToTail( VOICE, &Voice_Pool, &Voice[ index ] );
          }
       }
@@ -917,6 +1060,8 @@ static void AL_ResetVoices
       // Channel[ index ].PitchBendHundreds  = AL_DefaultPitchBendRange / 100;
       Channel[ index ].vibrato         = 0;
       Channel[ index ].aftertouch      = 0;
+      Channel[ index ].pedal           = 0;
+      Channel[ index ].softpedal       = 0;
       Channel[ index ].vib_pos         = 0.0f;
       Channel[ index ].vib_speed       = 2 * 3.141592653f * 5.0f;
       Channel[ index ].vib_depth       = 0.5f / 127;
@@ -1181,8 +1326,8 @@ void AL_NoteOff
 
    {
    int voice;
-   int port;
-   int voc;
+   // int port;
+   // int voc;
 
    // We only play channels 1 through 10
    if ( channel > AL_MaxMidiChannel )
@@ -1199,23 +1344,45 @@ void AL_NoteOff
 
    Voice[ voice ].status = NOTE_OFF;
 
-   port = Voice[ voice ].port;
-   voc  = ( voice >= NUM_VOICES ) ? voice - NUM_VOICES : voice;
-
-   if ( AL_SendStereo )
+   if ( Channel[ channel ].pedal )
       {
-      AL_SendOutputToPort( AL_LeftPort, 0xB0 + voice,
-         hibyte( Voice[ voice ].pitchleft ) );
-      AL_SendOutputToPort( AL_RightPort, 0xB0 + voice,
-         hibyte( Voice[ voice ].pitchright ) );
+      Voice[ voice ].sustain |= Sustain_Pedal;
+      }
+
+   if ( Voice[ voice ].sustain != Sustain_None )
+      {
+      return;
+      }
+
+   Voice[ voice ].sustain = Sustain_None;
+   Voice[ voice ].age = 0;
+
+   AL_VoiceOff( voice );
+   //Wohlstand: Content moved to AL_VoiceOff() function
+   // port = Voice[ voice ].port;
+   // voc  = ( voice >= NUM_VOICES ) ? voice - NUM_VOICES : voice;
+
+   // if ( AL_SendStereo )
+   //    {
+   //    AL_SendOutputToPort( AL_LeftPort, 0xB0 + voice,
+   //       hibyte( Voice[ voice ].pitchleft ) );
+   //    AL_SendOutputToPort( AL_RightPort, 0xB0 + voice,
+   //       hibyte( Voice[ voice ].pitchright ) );
+   //    }
+   // else
+   //    {
+   //    AL_SendOutput( port, 0xB0 + voc, hibyte( Voice[ voice ].pitchleft ) );
+   //    }
+
+   LL_Remove( VOICE, &Channel[ channel ].Voices, &Voice[ voice ] );
+   if ( VoiceAllocMode == 1 )
+      {
+      LL_AddToHead( VOICE, &Voice_Pool, &Voice[ voice ] );
       }
    else
       {
-      AL_SendOutput( port, 0xB0 + voc, hibyte( Voice[ voice ].pitchleft ) );
+      LL_AddToTail( VOICE, &Voice_Pool, &Voice[ voice ] );
       }
-
-   LL_Remove( VOICE, &Channel[ channel ].Voices, &Voice[ voice ] );
-   LL_AddToTail( VOICE, &Voice_Pool, &Voice[ voice ] );
    }
 
 
@@ -1268,9 +1435,17 @@ void AL_NoteOn
    VoiceRecentTimbre[ voice ] = dst_timbre;
    Voice[ voice ].key      = key;
    Voice[ voice ].channel  = channel;
-   Voice[ voice ].velocity = velocity;
+   if (Channel[ channel ].softpedal )
+      {
+      Voice[ voice ].velocity = velocity * 80 / 100;
+      }
+   else
+      {
+      Voice[ voice ].velocity = velocity;
+      }
    Voice[ voice ].status   = NOTE_ON;
-
+   Voice[ voice ].sustain  = Sustain_None;
+   Voice[ voice ].age      = 0;
    LL_AddToTail( VOICE, &Channel[ channel ].Voices, &Voice[ voice ] );
 
    AL_SetVoiceTimbre( voice );
@@ -1292,10 +1467,18 @@ void AL_AllNotesOff
    )
 
    {
+   int pedal;
+
+   pedal = Channel[ channel ].pedal;
+   Channel[ channel ].pedal = 0;
+
    while( Channel[ channel ].Voices.start != NULL )
       {
+      Channel[ channel ].Voices.start->sustain = Sustain_None;
       AL_NoteOff( channel, Channel[ channel ].Voices.start->key, 0 );
       }
+
+   Channel[ channel ].pedal = pedal;
    }
 
 void AL_ChannelAfterTouch
@@ -1362,6 +1545,29 @@ void AL_ControlChange
          AL_SetChannelExpression( channel, data );
          break;
 
+      case MIDI_PEDAL:
+         Channel[ channel ].pedal = (data >= 64);
+         if ( !Channel[ channel ].pedal )
+            {
+            AL_KillSustainedVoices( channel, Sustain_Pedal);
+            }
+         break;
+
+      case MIDI_SOSTENUTO:
+         if ( data >= 64 )
+            {
+            AL_SetChannelSostenuto( channel );
+            }
+         else
+            {
+            AL_KillSustainedVoices( channel, Sustain_Sostenuto);
+            }
+         break;
+
+      case MIDI_SOFTPEDAL:
+         Channel[ channel ].softpedal = (data >= 64);
+         break;
+
       case MIDI_DETUNE :
          AL_SetChannelDetune( channel, data );
          break;
@@ -1386,6 +1592,8 @@ void AL_ControlChange
          AL_UpdateBendMult ( channel );
          Channel[ channel ].vibrato = 0;
          Channel[ channel ].aftertouch = 0;
+         Channel[ channel ].pedal = 0;
+         Channel[ channel ].softpedal = 0;
          Channel[ channel ].vib_pos = 0.0f;
          Channel[ channel ].vib_speed = 2 * 3.141592653f * 5.0f;
          Channel[ channel ].vib_depth = 0.5f / 127;
@@ -1516,9 +1724,27 @@ void AL_RunTimers
    )
 
    {
-   int index, has_notes, has_vibrato;
+   int index, has_notes, has_vibrato, numvoices;
    VOICE *it;
    float delay;
+
+   numvoices = NUM_VOICES;
+   if ( ( AL_OPL3 ) && ( !AL_Stereo ) )
+      {
+      numvoices = NUM_VOICES * 2;
+      }
+
+   for( index = 0; index < numvoices; index++ )
+      {
+      if ( Voice[ index ].status == NOTE_ON || Voice[ index ].sustain != Sustain_None )
+         {
+         if ( Voice[ index ].age < 4000000000)
+            {
+            Voice[ index ].age += 100000L / rate;
+            }
+         }
+      }
+
 
    delay = 1.0f / rate;
 
