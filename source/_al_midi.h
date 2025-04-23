@@ -20,6 +20,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef ___AL_MIDI_H
 #define ___AL_MIDI_H
 
+#include <stdint.h>
+
 #define NO_ADLIB_DETECTION    "NOAL"
 
 #define STEREO_DETUNE 5
@@ -159,8 +161,8 @@ typedef struct
 typedef struct
    {
    VOICELIST Voices;
-   unsigned char bankLo;
-   unsigned char bankHi;
+   uint8_t   bankLo;
+   uint8_t   bankHi;
    int       Timbre;
    int       isDrum;
    int       Pitchbend;
@@ -177,17 +179,17 @@ typedef struct
    short     PitchBendLSB;
    // short     PitchBendRange;
    int       PitchBendMultiplier;
-   unsigned char vibrato;
-   unsigned char aftertouch;
-   unsigned char pedal;
-   unsigned char softpedal;
+   uint8_t   vibrato;
+   uint8_t   aftertouch;
+   uint8_t   pedal;
+   uint8_t   softpedal;
    float     vib_pos;
    float     vib_speed;
    float     vib_depth;
    int       vib_delay_us;
-   unsigned short portamento;
-   unsigned char portamento_en;
-   char      portamento_src;
+   uint16_t  portamento;
+   uint8_t   portamento_en;
+   int8_t    portamento_src;
    float     portamento_rate;
    unsigned  gliding_voices;
    } CHANNEL;
@@ -216,6 +218,7 @@ static void AL_SetVoicePitch( int voice );
 static void AL_SetChannelSostenuto( int channel );
 static void AL_VoiceOff( int num );
 static void AL_KillSustainedVoices( int channel, unsigned sustain );
+static void AL_SetChannelPortamento( int channel );
 static void AL_SetChannelVolume( int channel, int volume );
 static void AL_SetChannelExpression( int channel, int expression );
 static void AL_SetChannelPan( int channel, int pan );

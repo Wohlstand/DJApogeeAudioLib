@@ -844,13 +844,19 @@ static void AL_KillSustainedVoices
    }
 
 
+/*---------------------------------------------------------------------
+   Function: AL_SetChannelPortamento
+
+   Updates portamento value at specified MIDI channel.
+---------------------------------------------------------------------*/
+
 static void AL_SetChannelPortamento
    (
    int channel
    )
 
    {
-   float rate = HUGE_VAL;
+   float rate = HUGE_VALF;
    uint16_t midival = Channel[ channel ].portamento;
 
    if ( Channel[ channel ].portamento_en && midival > 0 )
