@@ -654,7 +654,14 @@ static void AL_SetVoicePitch
 
    vibrato = max( Channel[ channel ].vibrato, Channel[ channel ].aftertouch );
 
-   toneF = (note << 20) + (Channel[ channel ].Pitchbend * Channel[ channel ].PitchBendMultiplier);
+   note <<= 20;
+
+   if ( Voice[ voice ].glide )
+      {
+      note = (int)(Voice[ voice ].glide_key * BENDSENS_RANGE);
+      }
+
+   toneF = note + (Channel[ channel ].Pitchbend * Channel[ channel ].PitchBendMultiplier);
    if ( vibrato != 0 )
       {
       toneF += (int)((float)vibrato * Channel[ channel ].vib_depth * sin(Channel[ channel ].vib_pos) * BENDSENS_RANGE);
@@ -813,6 +820,11 @@ static void AL_KillSustainedVoices
             voice = voice->next;
 
             Voice[ num ].age = 0;
+            if ( Voice[ num ].glide )
+               {
+               --Channel[ channel ].gliding_voices;
+               }
+            Voice[ num ].glide = 0;
 
             AL_VoiceOff( num );
             LL_Remove( VOICE, &Channel[ channel ].Voices, &Voice[ num ] );
@@ -829,6 +841,24 @@ static void AL_KillSustainedVoices
          }
       voice = voice->next;
       }
+   }
+
+
+static void AL_SetChannelPortamento
+   (
+   int channel
+   )
+
+   {
+   float rate = HUGE_VAL;
+   uint16_t midival = Channel[ channel ].portamento;
+
+   if ( Channel[ channel ].portamento_en && midival > 0 )
+      {
+      rate = 350.0f * pow( 2.0f, -0.062f * ( 1.0f / 128 ) * midival );
+      }
+
+   Channel[ channel ].portamento_rate = rate;
    }
 
 
@@ -970,6 +1000,9 @@ static void AL_ResetVoicesPart
          Voice[ index ].num = index;
          Voice[ index ].sustain = Sustain_None;
          Voice[ index ].key = 0;
+         Voice[ index ].glide = 0;
+         Voice[ index ].glide_key = 0;
+         Voice[ index ].glide_rate = HUGE_VALF;
          Voice[ index ].velocity = 0;
          Voice[ index ].channel = -1;
          Voice[ index ].timbre = -1;
@@ -1066,6 +1099,11 @@ static void AL_ResetVoices
       Channel[ index ].vib_speed       = 2 * 3.141592653f * 5.0f;
       Channel[ index ].vib_depth       = 0.5f / 127;
       Channel[ index ].vib_delay_us    = 0;
+      Channel[ index ].portamento      = 0;
+      Channel[ index ].portamento_en   = 0;
+      Channel[ index ].portamento_src  = -1;
+      Channel[ index ].portamento_rate = HUGE_VALF;
+      Channel[ index ].gliding_voices  = 0;
       }
    }
 
@@ -1356,6 +1394,11 @@ void AL_NoteOff
 
    Voice[ voice ].sustain = Sustain_None;
    Voice[ voice ].age = 0;
+   if ( Voice[ voice ].glide )
+      {
+      --Channel[ channel ].gliding_voices;
+      }
+   Voice[ voice ].glide = 0;
 
    AL_VoiceOff( voice );
    //Wohlstand: Content moved to AL_VoiceOff() function
@@ -1402,6 +1445,8 @@ void AL_NoteOn
    {
    int voice;
    int dst_timbre;
+   char porta_src;
+   float porta_rate_cur;
 
    // We only play channels 1 through 10
    if ( channel > AL_MaxMidiChannel )
@@ -1434,6 +1479,8 @@ void AL_NoteOn
 
    VoiceRecentTimbre[ voice ] = dst_timbre;
    Voice[ voice ].key      = key;
+   Voice[ voice ].glide_key = key;
+   Voice[ voice ].glide_rate = HUGE_VALF;
    Voice[ voice ].channel  = channel;
    if (Channel[ channel ].softpedal )
       {
@@ -1446,6 +1493,19 @@ void AL_NoteOn
    Voice[ voice ].status   = NOTE_ON;
    Voice[ voice ].sustain  = Sustain_None;
    Voice[ voice ].age      = 0;
+   Voice[ voice ].glide    = 0;
+
+   porta_src = Channel[ channel ].portamento_src;
+   Channel[ channel ].portamento_src = key;
+
+   if ( !Channel[ channel ].isDrum && Channel[ channel ].portamento_en && porta_src >= 0 && Channel[ channel ].portamento_rate != HUGE_VALF)
+      {
+      ++Channel[ channel ].gliding_voices;
+      Voice[ voice ].glide = 1;
+      Voice[ voice ].glide_key = porta_src;
+      Voice[ voice ].glide_rate = Channel[ channel ].portamento_rate;
+      }
+
    LL_AddToTail( VOICE, &Channel[ channel ].Voices, &Voice[ voice ] );
 
    AL_SetVoiceTimbre( voice );
@@ -1533,6 +1593,21 @@ void AL_ControlChange
          AL_UpdateBanks( channel );
          break;
 
+      case MIDI_PORTAMENTO_MSB:
+         Channel[ channel ].portamento = (uint16_t)((Channel[ channel ].portamento & 0x007F) | (data << 7));
+         AL_SetChannelPortamento( channel );
+         break;
+
+      case MIDI_PORTAMENTO_LSB:
+         Channel[ channel ].portamento = (uint16_t)((Channel[ channel ].portamento & 0x3F80) | data);
+         AL_SetChannelPortamento( channel );
+         break;
+
+      case MIDI_PORTAMENTO_EN:
+         Channel[ channel ].portamento_en = (data >= 64);
+         AL_SetChannelPortamento( channel );
+         break;
+
       case MIDI_VOLUME :
          AL_SetChannelVolume( channel, data );
          break;
@@ -1598,6 +1673,10 @@ void AL_ControlChange
          Channel[ channel ].vib_speed = 2 * 3.141592653f * 5.0f;
          Channel[ channel ].vib_depth = 0.5f / 127;
          Channel[ channel ].vib_delay_us = 0;
+         Channel[ channel ].portamento = 0;
+         Channel[ channel ].portamento_en = 0;
+         Channel[ channel ].portamento_src = -1;
+         Channel[ channel ].portamento_rate = HUGE_VALF;
          // AL_ResetVoicesPart();
          break;
 
@@ -1718,6 +1797,12 @@ void AL_SetPitchBend
    }
 
 
+/*---------------------------------------------------------------------
+   Function: AL_RunTimers
+
+   Performs all the timer-dependent functionality.
+---------------------------------------------------------------------*/
+
 void AL_RunTimers
    (
    int rate
@@ -1725,8 +1810,9 @@ void AL_RunTimers
 
    {
    int index, has_notes, has_vibrato, numvoices;
+   int has_glide, dir_up, glide_end;
    VOICE *it;
-   float delay;
+   float delay, tone_dst, tone_prev, tone_cur, tone_incr;
 
    numvoices = NUM_VOICES;
    if ( ( AL_OPL3 ) && ( !AL_Stereo ) )
@@ -1752,13 +1838,38 @@ void AL_RunTimers
       {
       has_notes = Channel[ index ].Voices.start != NULL;
       has_vibrato = Channel[ index ].vibrato > 0 || Channel[ index ].aftertouch > 0;
+      has_glide = Channel[ index ].gliding_voices > 0;
 
-      if ( has_notes && has_vibrato )
+      if ( has_notes && ( has_vibrato || has_glide ) )
          {
             it = Channel[ index ].Voices.start;
             while( it != NULL )
                {
-               AL_SetVoicePitch( it->num );
+               if ( it->glide )
+                  {
+                  tone_dst = it->key;
+                  tone_prev = it->glide_key;
+
+                  dir_up = tone_prev < tone_dst;
+                  tone_incr = delay * (dir_up ? it->glide_rate : -it->glide_rate);
+
+                  tone_cur = tone_prev + tone_incr;
+                  glide_end = !(dir_up ? (tone_cur < tone_dst) : (tone_cur > tone_dst));
+
+                  it->glide_key = tone_cur;
+
+                  if ( glide_end )
+                     {
+                     it->glide = 0;
+                     --Channel[ index ].gliding_voices;
+                     }
+                  }
+
+               if ( has_vibrato || it->glide )
+                  {
+                  AL_SetVoicePitch( it->num );
+                  }
+
                it = it->next;
                }
 
@@ -1768,9 +1879,7 @@ void AL_RunTimers
          {
          Channel[ index ].vib_pos = 0;
          }
-
       }
-
    }
 
 

@@ -62,6 +62,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define MIDI_BANK_LSB        0x20
 #define MIDI_MODULATION      1
 #define MIDI_VOLUME          7
+#define MIDI_PORTAMENTO_MSB  5
+#define MIDI_PORTAMENTO_LSB  37
+#define MIDI_PORTAMENTO_EN   65
 #define MIDI_PAN             10
 #define MIDI_EXPRESSION      11
 #define MIDI_PEDAL           64
@@ -142,6 +145,9 @@ typedef struct VOICE
    unsigned status;
    unsigned sustain;
    unsigned long age;
+   unsigned glide;
+   float    glide_key;
+   float    glide_rate;
    } VOICE;
 
 typedef struct
@@ -179,6 +185,11 @@ typedef struct
    float     vib_speed;
    float     vib_depth;
    int       vib_delay_us;
+   unsigned short portamento;
+   unsigned char portamento_en;
+   char      portamento_src;
+   float     portamento_rate;
+   unsigned  gliding_voices;
    } CHANNEL;
 
 typedef struct
