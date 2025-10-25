@@ -529,7 +529,7 @@ void TurnOffTextCursor
 
    regs.w.ax = 0x0100;
    regs.w.cx = 0x2000;
-#ifdef __FLAT__
+#if defined(__FLAT__) || defined(__DJGPP__)
    int386(0x10,&regs,&regs);
 #else
    int86(0x10,&regs,&regs);
@@ -553,7 +553,7 @@ void TurnOnTextCursor
 
    regs.w.ax = 0x0100;
    regs.w.cx = 0x0708;
-#ifdef __FLAT__
+#if defined(__FLAT__) || defined(__DJGPP__)
    int386(0x10,&regs,&regs);
 #else
    int86(0x10,&regs,&regs);
