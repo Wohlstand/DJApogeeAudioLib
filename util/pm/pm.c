@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdio.h>
 #include <string.h>
 #include "music.h"
+#include "task_man.h"
 
 // int   _argc = 0;
 // char **_argv = NULL;
@@ -105,6 +106,7 @@ int main
    USER_InitArgs(argc, argv);
 
    printf( "\nPM   EMIDI Music Player   Version 1.21  Copyright (c) 1996 by Jim Dose\n" );
+   printf( "     Ported to DJGPP by Vitaliy Novichkov\n" );
 
    if ( ( CheckUserParm( "?", argc, argv ) ) || ( argc < 2 ) )
       {
@@ -210,7 +212,7 @@ int main
    else
       {
       char ch;
-      songposition pos;
+      songposition pos, pos_prev;
 
       if ( gotopos == 1 )
          {
@@ -221,6 +223,7 @@ int main
          MUSIC_SetSongTime( time );
          }
 
+      TS_Suspend = TRUE;
       printf( "Playing file '%s'.\n\n", filename );
       printf( "Press F to advance one measure.\n"
               "Press R to rewind one measure.\n"
@@ -228,24 +231,32 @@ int main
               "Press ESCape to end.\n\n" );
 
       MUSIC_GetSongLength( &pos );
+      memcpy( &pos_prev, &pos , sizeof(songposition) );
       printf( "Song length: time (m:s:ms) = %lu:%lu:%lu, "
          "(measure:beat:tick) = %u:%u:%u\n\n",
          pos.milliseconds / (60*1000),
          ( pos.milliseconds / 1000 ) % 60,
          pos.milliseconds % 1000,
          pos.measure, pos.beat, pos.tick );
+      TS_Suspend = FALSE;
       ch = 0;
 
       TurnOffTextCursor();
       while( ch != 27 )
          {
          MUSIC_GetSongPosition( &pos );
-         printf( "time (m:s:ms) = %lu:%lu:%lu     \t(measure:beat:tick) = %d:%d:%d          \r",
-            pos.milliseconds / (60*1000),
-            ( pos.milliseconds / 1000 ) % 60,
-            pos.milliseconds % 1000,
-            pos.measure, pos.beat, pos.tick );
-         fflush( stdout );
+         if ( memcmp( &pos_prev, &pos , sizeof(songposition) ) != 0 )
+            {
+            TS_Suspend = TRUE;
+            printf( "time (m:s:ms) = %lu:%lu:%lu     \t(measure:beat:tick) = %d:%d:%d          \r",
+               pos.milliseconds / (60*1000),
+               ( pos.milliseconds / 1000 ) % 60,
+               pos.milliseconds % 1000,
+               pos.measure, pos.beat, pos.tick );
+            fflush( stdout );
+            TS_Suspend = FALSE;
+            memcpy( &pos_prev, &pos , sizeof(songposition) );
+            }
 
          if ( kbhit() )
             {

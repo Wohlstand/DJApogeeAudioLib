@@ -102,6 +102,7 @@ static volatile int  TS_TimesInInterrupt;
 static char TS_Installed = FALSE;
 
 volatile int TS_InInterrupt = FALSE;
+volatile int TS_Suspend = FALSE;
 
 /*---------------------------------------------------------------------
    Function prototypes
@@ -322,7 +323,7 @@ static void __interrupt __far TS_ServiceSchedule
          ptr->count += TaskServiceRate;
 //JIM
 //         if ( ptr->count >= ptr->rate )
-         while( ptr->count >= ptr->rate )
+         while( !TS_Suspend && ptr->count >= ptr->rate )
             {
             ptr->count -= ptr->rate;
             ptr->TaskService( ptr );

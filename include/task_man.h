@@ -56,6 +56,11 @@ typedef struct task
 
 extern volatile int TS_InInterrupt;
 
+// TS_Suspend can be used to temporarily suspend interrupts handling
+// to call conflicting for interrupts functions like printf and fflush
+// on DJGPP
+extern volatile int TS_Suspend;
+
 void    TS_Shutdown( void );
 task    *TS_ScheduleTask( void ( *Function )( task * ), int rate,
                           int priority, void *data );
