@@ -152,7 +152,7 @@ jobs:
         cp -v build/util/timer/timer.exe _packed/djaudio/util/
         cp -v util/maketmb/maketmb.exe _packed/djaudio/util/
         cd _packed
-        zip -9 dj-audio-dos32.zip djaudio
+        zip -r -9 dj-audio-dos32.zip djaudio
         cd ..
 
     - name: Deploy to builds.wohlsoft.ru
