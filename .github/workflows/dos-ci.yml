@@ -32,7 +32,7 @@ jobs:
             csdpmi7b_download: "https://wohlsoft.ru/docs/Software/DJGPP/v2misc/csdpmi7b.zip",
 
             deps_cmdline: "sudo apt-get update --fix-missing -qq &&
-            sudo apt-get install -y libsdl2-dev ninja-build cmake p7zip-full unzip lftp
+            sudo apt-get install -y libsdl2-dev ninja-build cmake p7zip-full unzip lftp nasm
             "
           }
 
