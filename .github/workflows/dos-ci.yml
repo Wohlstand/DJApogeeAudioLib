@@ -146,10 +146,10 @@ jobs:
         mkdir -p _packed/djaudio/doc
         cp -v public/*txt _packed/djaudio/doc
         cp -rv include/* _packed/djaudio/include/
-        cp -v djaudio/libass_audio.a _packed/djaudio/lib
-        cp -v djaudio/util/pm/pm.exe _packed/djaudio/util/
-        cp -v djaudio/util/ps/ps.exe _packed/djaudio/util/
-        cp -v djaudio/util/timer/timer.exe _packed/djaudio/util/
+        cp -v build/libass_audio.a _packed/djaudio/lib
+        cp -v build/util/pm/pm.exe _packed/djaudio/util/
+        cp -v build/util/ps/ps.exe _packed/djaudio/util/
+        cp -v build/util/timer/timer.exe _packed/djaudio/util/
         cp -v util/maketmb/maketmb.exe _packed/djaudio/util/
         cd _packed
         zip -9 dj-audio-dos32.zip djaudio
