@@ -74,6 +74,7 @@ target_link_libraries(ass_audio PUBLIC ass_usrhooks)
 
 option(ASS_BUILD_TOOLS "Build tools" ON)
 if(ASS_BUILD_TOOLS)
+    add_subdirectory(util/maketmb)
     add_subdirectory(util/pm)
     add_subdirectory(util/ps)
     add_subdirectory(util/timer)
