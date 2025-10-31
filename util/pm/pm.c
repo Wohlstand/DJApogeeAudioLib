@@ -306,6 +306,7 @@ int main
 
    free( SongPtr );
    MUSIC_Shutdown();
+   TS_Shutdown();
    printf( "\n" );
    return 0;
    }

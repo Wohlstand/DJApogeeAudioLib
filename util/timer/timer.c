@@ -41,7 +41,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 void  TimerFunc( task *Task );
 
 #define TRUE  ( 1 == 1 )
-#define FALSE ( !TRUE )
+#define FALSE ( 1 != 1 )
 
 
 /*---------------------------------------------------------------------
@@ -57,19 +57,25 @@ int main
    task *Task1 = NULL;
    task *Task2 = NULL;
    task *Task3 = NULL;
-   int   Timer1;
-   int   Timer2;
-   int   Timer3;
+   volatile int   Timer1, Timer1p;
+   volatile int   Timer2, Timer2p;
+   volatile int   Timer3, Timer3p;
 
    Timer1 = 0;
    Timer2 = 0;
    Timer3 = 0;
+   Timer1p = 0;
+   Timer2p = 0;
+   Timer3p = 0;
 
-   Task1 = TS_ScheduleTask( &TimerFunc, 60, 1, &Timer1 );
-   Task2 = TS_ScheduleTask( &TimerFunc, 129, 1, &Timer2 );
+   Task1 = TS_ScheduleTask( &TimerFunc, 60, 1, (void*)&Timer1 );
+   Task2 = TS_ScheduleTask( &TimerFunc, 129, 1, (void*)&Timer2 );
 
+   TS_Suspend = TRUE;
    printf( "First, Timer 1 is set to 60 ticks per second and Timer 2 is\n"
       "set to 129 ticks per second.\n" );
+   fflush( stdout );
+   TS_Suspend = FALSE;
 
    // Start the first two scheduled tasks
    TS_Dispatch();
@@ -77,25 +83,47 @@ int main
    // Wait 5 seconds
    while( Timer1 < 300 )
       {
-      printf( "\rTimer 1 = %d\t\tTimer 2 = %d\t\tTimer 3 = %d",
-         Timer1, Timer2, Timer3 );
+      if(Timer1 != Timer1p || Timer2 != Timer2p || Timer3 != Timer3p)
+         {
+         TS_Suspend = TRUE;
+         printf( "\rTimer 1 = %d\t\tTimer 2 = %d\t\tTimer 3 = %d",
+            Timer1, Timer2, Timer3 );
+         fflush( stdout );
+         Timer1p = Timer1;
+         Timer2p = Timer2;
+         Timer3p = Timer3;
+         TS_Suspend = FALSE;
+         }
       }
 
+   TS_Suspend = TRUE;
    printf( "\n\nThen, we start Timer 3 at 849 ticks per second.\n" );
+   TS_Suspend = FALSE;
 
    // Start the third task
-   Task3 = TS_ScheduleTask( &TimerFunc, 849, 1, &Timer3 );
+   Task3 = TS_ScheduleTask( &TimerFunc, 849, 1, (void*)&Timer3 );
    TS_Dispatch();
 
    // Wait 5 seconds
    Timer1 = 0;
    while( Timer1 < 300 )
       {
-      printf( "\rTimer 1 = %d\t\tTimer 2 = %d\t\tTimer 3 = %d",
-         Timer1, Timer2, Timer3 );
+      if(Timer1 != Timer1p || Timer2 != Timer2p || Timer3 != Timer3p)
+         {
+         TS_Suspend = TRUE;
+         printf( "\rTimer 1 = %d\t\tTimer 2 = %d\t\tTimer 3 = %d",
+            Timer1, Timer2, Timer3 );
+         fflush( stdout );
+         Timer1p = Timer1;
+         Timer2p = Timer2;
+         Timer3p = Timer3;
+         TS_Suspend = FALSE;
+         }
       }
 
+   TS_Suspend = TRUE;
    printf( "\n\nNow we'll set Timer 2 to run at 1000 ticks per second.\n" );
+   TS_Suspend = FALSE;
 
    // Change the task's rate
    TS_SetTaskRate( Task2, 1000 );
@@ -104,12 +132,23 @@ int main
    Timer1 = 0;
    while( Timer1 < 300 )
       {
-      printf( "\rTimer 1 = %d\t\tTimer 2 = %d\t\tTimer 3 = %d",
-         Timer1, Timer2, Timer3 );
+      if(Timer1 != Timer1p || Timer2 != Timer2p || Timer3 != Timer3p)
+         {
+         TS_Suspend = TRUE;
+         printf( "\rTimer 1 = %d\t\tTimer 2 = %d\t\tTimer 3 = %d",
+            Timer1, Timer2, Timer3 );
+         fflush( stdout );
+         Timer1p = Timer1;
+         Timer2p = Timer2;
+         Timer3p = Timer3;
+         TS_Suspend = FALSE;
+         }
       }
 
+   TS_Suspend = TRUE;
    printf("\n\nAnd finally, we'll halt Timer 2, leaving Timers 1 and 3 to "
       "continue.\n" );
+   TS_Suspend = FALSE;
 
    // Stop one of the timers
    TS_Terminate( Task2 );
@@ -118,11 +157,23 @@ int main
    Timer1 = 0;
    while( Timer1 < 300 )
       {
-      printf( "\rTimer 1 = %d\t\tTimer 2 = %d\t\tTimer 3 = %d",
-         Timer1, Timer2, Timer3 );
+      if(Timer1 != Timer1p || Timer2 != Timer2p || Timer3 != Timer3p)
+         {
+         TS_Suspend = TRUE;
+         printf( "\rTimer 1 = %d\t\tTimer 2 = %d\t\tTimer 3 = %d",
+            Timer1, Timer2, Timer3 );
+         fflush( stdout );
+         Timer1p = Timer1;
+         Timer2p = Timer2;
+         Timer3p = Timer3;
+         TS_Suspend = FALSE;
+         }
       }
 
+   TS_Suspend = TRUE;
    printf( "\n\nAnd now we're done.\n" );
+   fflush( stdout );
+   TS_Suspend = FALSE;
 
    // Terminate the other timers.
    TS_Terminate( Task1 );
@@ -146,5 +197,5 @@ void TimerFunc
    )
 
    {
-   ( *( int * )Task->data )++;
+   ( *( volatile int * )Task->data )++;
    }

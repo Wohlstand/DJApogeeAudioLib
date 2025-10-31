@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdio.h>
 #include <string.h>
 #include "fx_man.h"
+#include "task_man.h"
 
 
 /*---------------------------------------------------------------------
@@ -49,7 +50,7 @@ int   CheckUserParm( const char *parameter, int _argc, char **_argv );
 void  DefaultExtension( char *path, char *extension );
 
 #define TRUE  ( 1 == 1 )
-#define FALSE ( !TRUE )
+#define FALSE ( 1 != 1 )
 
 #define NUMCARDS 8
 
@@ -185,7 +186,8 @@ int main
    if ( SoundCardNums[ card ] == SoundBlaster || SoundCardNums[ card ] == Awe32 )
       {
       FX_GetBlasterSettings( &blaster );
-      printf("Blaster card setup: A=0x%lX, I=%ld, D8=%ld, D16=%ld\n", blaster.Address, blaster.Interrupt, blaster.Dma8, blaster.Dma16);
+      printf( "Blaster card setup: A=0x%lX, I=%ld, D8=%ld, D16=%ld\n", blaster.Address, blaster.Interrupt, blaster.Dma8, blaster.Dma16 );
+      fflush( stdout );
       FX_SetupSoundBlaster(blaster, &device.MaxVoices, &device.MaxSampleBits, &device.MaxChannels);
       }
 
@@ -209,26 +211,44 @@ int main
          }
       }
 
-   printf("Init card...\n");
+   TS_Suspend = TRUE;
+   printf( "Init card...\n" );
+   fflush( stdout );
+   TS_Suspend = FALSE;
    status = FX_SetupCard( SoundCardNums[ card ], &device );
    if ( status != FX_Ok )
       {
+      free( SoundPtr );
+      FX_Shutdown();
+      TS_Shutdown();
       printf( "%s\n", FX_ErrorString( status ) );
+      fflush( stdout );
       return 1;
       }
 
-   printf("Init FX... (C=%d [%d=%s], V=%d, C=%d, B=%d, R=%d)\n", card, SoundCardNums[ card ], SoundCardNames[ card ], voices, channels, bits, rate);
+   TS_Suspend = TRUE;
+   printf( "Init FX... (C=%d [%d=%s], V=%d, C=%d, B=%d, R=%d)\n", card, SoundCardNums[ card ], SoundCardNames[ card ], voices, channels, bits, rate );
+   fflush( stdout );
+   TS_Suspend = FALSE;
    status = FX_Init( SoundCardNums[ card ], voices, channels, bits, rate );
    if ( status != FX_Ok )
       {
+      free( SoundPtr );
+      FX_Shutdown();
+      TS_Shutdown();
       printf( "%s\n", FX_ErrorString( status ) );
+      fflush( stdout );
       return 1;
       }
 
+   TS_Suspend = TRUE;
    printf("Set reverb...\n");
+   TS_Suspend = FALSE;
    FX_SetReverb( reverb );
 
+   TS_Suspend = TRUE;
    printf("Set volume...\n");
+   TS_Suspend = FALSE;
    FX_SetVolume( 255 );
 
    printf( "Playing file '%s'.\n\n", filename );
@@ -253,7 +273,10 @@ int main
 
       if ( voice < FX_Ok )
          {
+         TS_Suspend = TRUE;
          printf( "Sound error - %s\n", FX_ErrorString( status ) );
+         fflush( stdout );
+         TS_Suspend = FALSE;
          }
 
       ch = getch();
@@ -262,8 +285,10 @@ int main
    FX_StopAllSounds();
    free( SoundPtr );
    FX_Shutdown();
+   TS_Shutdown();
 
    printf( "\n" );
+   fflush( stdout );
    return 0;
    }
 
