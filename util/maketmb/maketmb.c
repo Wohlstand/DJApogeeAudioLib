@@ -21,6 +21,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#if defined(__DJGPP__) || defined(__WATCOMC__)
+#  define uint32_t   unsigned long
+#  define uint8_t    unsigned char
+#  define int8_t     signed char
+#else
+#  include <stdint.h>
+#endif
 
 #define true   ( 1 == 1 )
 #define false  ( !true )
@@ -30,31 +37,31 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 typedef struct
    {
-   unsigned char SAVEK[ 2 ];
-   unsigned char Level[ 2 ];
-   unsigned char Env1[ 2 ];
-   unsigned char Env2[ 2 ];
-   unsigned char Wave[ 2 ];
-   unsigned char Feedback;
-   unsigned char unused[ 5 ];
+   uint8_t SAVEK[ 2 ];
+   uint8_t Level[ 2 ];
+   uint8_t Env1[ 2 ];
+   uint8_t Env2[ 2 ];
+   uint8_t Wave[ 2 ];
+   uint8_t Feedback;
+   uint8_t unused[ 5 ];
    } TIMBRE;
 
 typedef struct
    {
-   unsigned long Signature;
-   TIMBRE        Timbre[ BANK_NUMTIMBRES ];
+   uint32_t Signature;
+   TIMBRE   Timbre[ BANK_NUMTIMBRES ];
    } BANK;
 
 typedef struct
    {
-   unsigned char SAVEK[ 2 ];
-   unsigned char Level[ 2 ];
-   unsigned char Env1[ 2 ];
-   unsigned char Env2[ 2 ];
-   unsigned char Wave[ 2 ];
-   unsigned char Feedback;
-   signed   char Transpose;
-   signed   char Velocity;
+   uint8_t SAVEK[ 2 ];
+   uint8_t Level[ 2 ];
+   uint8_t Env1[ 2 ];
+   uint8_t Env2[ 2 ];
+   uint8_t Wave[ 2 ];
+   uint8_t Feedback;
+   int8_t  Transpose;
+   int8_t  Velocity;
    } NEWTIMBRE;
 
 int Parse( char *filename );
@@ -78,7 +85,11 @@ int main
    )
 
    {
-   printf( "MAKETMB v1.04 by Jim Dos\x82, updated by Vitaliy Novichkov\n" );
+#if defined(__DJGPP__) || defined(__WATCOMC__)
+      printf( "MAKETMB v1.04 by Jim Dos\x82, updated by Vitaliy Novichkov\n" );
+#else
+      printf( "MAKETMB v1.04 by Jim Dosé, updated by Vitaliy Novichkov\n" );
+#endif
 
    switch( argc )
       {
