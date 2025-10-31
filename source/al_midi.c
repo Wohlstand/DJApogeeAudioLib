@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "blaster.h"
 #include "user.h"
 #include "al_midi.h"
+#define AL_MIDI_PRIVATE
 #include "_al_midi.h"
 #include "ll_man.h"
 #include "djconfig.h"
@@ -350,11 +351,11 @@ static void AL_SetVoicePan
    {
    int channel;
    int pan;
-   int slot;
+   // int slot;
    int port;
    int voc;
    TIMBRE *timbre;
-   uint8_t panning = 0;
+   // uint8_t panning = 0;
 
    channel = Voice[ voice ].channel;
    pan = Channel[ channel ].Pan;
@@ -599,7 +600,7 @@ static int AL_GetVoice
 
    while( voice != NULL )
       {
-      if ( voice->key == key && voice->status != NOTE_OFF)
+      if ( voice->key == (unsigned)key && voice->status != NOTE_OFF)
          {
          return( voice->num );
          }
@@ -804,8 +805,8 @@ static void AL_KillSustainedVoices
    {
    VOICE *voice;
    int num;
-   int port;
-   int voc;
+   // int port;
+   // int voc;
 
    voice = Channel[ channel ].Voices.start;
    while( voice != NULL )
@@ -1372,6 +1373,7 @@ void AL_NoteOff
    int voice;
    // int port;
    // int voc;
+   (void)velocity;
 
    // We only play channels 1 through 10
    if ( channel > AL_MaxMidiChannel )
@@ -1452,7 +1454,7 @@ void AL_NoteOn
    int voice;
    int dst_timbre;
    char porta_src;
-   float porta_rate_cur;
+   // float porta_rate_cur;
 
    // We only play channels 1 through 10
    if ( channel > AL_MaxMidiChannel )
@@ -1773,7 +1775,7 @@ void AL_SetPitchBend
 
    {
    int            pitchbend;
-   unsigned long  TotalBend;
+   // unsigned long  TotalBend;
    VOICE         *voice;
 
    // We only play channels 1 through 10

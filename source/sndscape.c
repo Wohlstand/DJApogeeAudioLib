@@ -1396,7 +1396,7 @@ static int SOUNDSCAPE_Setup
    {
    int tmp;
    int Interrupt;
-   int status;
+   // int status;
 
    // if necessary, clear any pending SB ints
    if ( SOUNDSCAPE_Config.SBEmul )

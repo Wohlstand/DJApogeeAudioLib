@@ -210,6 +210,7 @@ static void ADLIBFX_Service
 
    {
    int value;
+   (void)Task;
 
    if ( ADLIBFX_SoundPtr )
       {

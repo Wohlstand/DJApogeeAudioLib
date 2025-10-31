@@ -146,6 +146,7 @@ static void SS_ServiceInterrupt
    {
    int port = SS_Port;
    int count;
+   (void)Task;
 
    count = 0;
    while( ( inp( port + 1 ) & 0x40 ) == 0 )

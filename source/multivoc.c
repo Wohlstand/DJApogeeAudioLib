@@ -52,6 +52,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 #include "pitch.h"
 #include "multivoc.h"
+#define MULTIVOC_PRIVATE
 #include "_multivc.h"
 // #include "debugio.h"
 
@@ -106,8 +107,8 @@ static uint8_t *MV_MixBuffer[ NumberOfBuffers + 1 ];
 
 static VoiceNode *MV_Voices = NULL;
 
-static volatile VoiceNode VoiceList = {NULL, NULL};
-static volatile VoiceNode VoicePool = {NULL, NULL};
+static volatile VoiceNode VoiceList = {NULL, NULL, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, 0};
+static volatile VoiceNode VoicePool = {NULL, NULL, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, 0};
 
 static volatile int MV_MixPage      = 0;
 static int MV_VoiceHandle  = MV_MinVoiceHandle;
@@ -140,13 +141,13 @@ int MV_ErrorCode = MV_Ok;
    number.  A -1 returns a pointer the current error.
 ---------------------------------------------------------------------*/
 
-char *MV_ErrorString
+const char *MV_ErrorString
    (
    int ErrorNumber
    )
 
    {
-   char *ErrorString;
+   const char *ErrorString;
 
    switch( ErrorNumber )
       {
@@ -548,7 +549,7 @@ void MV_ServiceVoc
       }
    }
 
-
+#ifndef ULTRASOUND_OFF
 int leftpage  = -1;
 int rightpage = -1;
 
@@ -577,6 +578,7 @@ static void MV_ServiceRightGus( uint8_t **ptr, unsigned long *length )
    *ptr = MV_MixBuffer[ MV_MixPage ] + MV_RightChannelOffset;
    *length = MV_BufferSize;
    }
+#endif
 
 /*---------------------------------------------------------------------
    Function: MV_GetNextVOCBlock
@@ -596,7 +598,7 @@ playbackstatus MV_GetNextVOCBlock
    unsigned long  blocklength;
    unsigned long  samplespeed;
    unsigned int   tc;
-   int            packtype;
+   // int            packtype;
    int            voicemode;
    int            done;
    unsigned       BitsPerSample;
@@ -635,7 +637,7 @@ playbackstatus MV_GetNextVOCBlock
 
    voicemode = 0;
    lastblocktype = 0;
-   packtype = 0;
+   // packtype = 0;
 
    done = FALSE;
    while( !done )
@@ -680,7 +682,7 @@ playbackstatus MV_GetNextVOCBlock
             if ( lastblocktype != 8 )
                {
                tc = ( unsigned int )*ptr << 8;
-               packtype = *( ptr + 1 );
+               // packtype = *( ptr + 1 );
                samplespeed = (uint16_t)(256000000L / ( 65536 - tc ));
                voice->channels = 1;
                }
@@ -763,7 +765,7 @@ playbackstatus MV_GetNextVOCBlock
             // Extended block
             voice->bits  = 8;
             tc = *( unsigned short * )ptr;
-            packtype = *( ptr + 2 );
+            // packtype = *( ptr + 2 );
             voicemode = *( ptr + 3 );
             if ( voicemode )
                {
@@ -2694,7 +2696,7 @@ int MV_PlayLoopedWAV
       length     /= 2;
       }
 
-   loopend    = min( loopend, data->size );
+   loopend    = min( loopend, (long)data->size );
    absloopend = min( absloopend, length );
 
    voice->Playing     = TRUE;
@@ -2713,7 +2715,7 @@ int MV_PlayLoopedWAV
    voice->LoopEnd     = voice->NextBlock + loopend;
    voice->LoopSize    = absloopend - absloopstart;
 
-   if ( ( loopstart >= data->size ) || ( loopstart < 0 ) )
+   if ( ( loopstart >= (long)data->size ) || ( loopstart < 0 ) )
       {
       voice->LoopStart = NULL;
       voice->LoopEnd   = NULL;

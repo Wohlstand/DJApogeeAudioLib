@@ -1,13 +1,15 @@
 cmake_minimum_required(VERSION 3.8)
 project(ApogeeSS C ASM_MASM)
 
+include(cmake/build_props.cmake)
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_ASM_NASM_OBJECT_FORMAT coff)
 set(CMAKE_ASM_NASM_SOURCE_FILE_EXTENSIONS ${CMAKE_ASM_NASM_SOURCE_FILE_EXTENSIONS} asm ASM)
 
 enable_language(ASM_NASM)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror=implicit-function-declaration -Werror=pointer-sign")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror=implicit-function-declaration -Werror=pointer-sign -Wno-comment")
 
 add_library(ass_usrhooks OBJECT
     include/usrhooks/usrhooks.c

@@ -40,7 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define FALSE ( !TRUE )
 
 static union  REGS  Regs;
-static struct SREGS SegRegs;
+// static struct SREGS SegRegs;
 
 
 /*---------------------------------------------------------------------

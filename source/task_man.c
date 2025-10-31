@@ -116,7 +116,7 @@ static void __interrupt __far TS_ServiceSchedule( void );
 // static void __interrupt __far TS_ServiceScheduleIntEnabled( void );
 static void TS_AddTask( task *ptr );
 static int  TS_Startup( void );
-static void RestoreRealTimeClock( void );
+// static void RestoreRealTimeClock( void );
 
 #ifdef USESTACK
 // These declarations are necessary to use the inline assembly pragmas.

@@ -173,12 +173,13 @@ static void PCFX_Service
 
    {
    unsigned value;
+   (void)Task;
 
    if ( PCFX_Sound )
       {
       if ( PCFX_UseLookupFlag )
          {
-         value = PCFX_Lookup[ *PCFX_Sound ];
+         value = PCFX_Lookup[ (int)*PCFX_Sound ];
          PCFX_Sound++;
          }
       else
@@ -187,7 +188,7 @@ static void PCFX_Service
          PCFX_Sound += sizeof( short int );
          }
 
-      if ( ( PCFX_TotalVolume > 0 ) && ( value != PCFX_LastSample ) )
+      if ( ( PCFX_TotalVolume > 0 ) && ( value != (unsigned)PCFX_LastSample ) )
          {
          PCFX_LastSample = value;
          if ( value )

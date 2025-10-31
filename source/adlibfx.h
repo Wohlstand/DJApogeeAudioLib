@@ -71,10 +71,10 @@ int   ADLIBFX_Play( ALSound *sound, int volume, int priority, unsigned long call
 int   ADLIBFX_SoundPlaying( int handle );
 void  ADLIBFX_SetCallBack( void ( *function )( unsigned long ) );
 int   ADLIBFX_Init( void );
-int   ADLIBFX_Shutdown( void );
-   #pragma aux ADLIBFX_Shutdown frame;
-void  PCFX_UnlockMemory( void );
-   #pragma aux ADLIBFX_UnlockMemory frame;
+int   ADLIBFX_Shutdown( void ) __attribute__((noinline));
+   // #pragma aux ADLIBFX_Shutdown frame;
+void  PCFX_UnlockMemory( void ) __attribute__((noinline));
+   // #pragma aux ADLIBFX_UnlockMemory frame;
 int   PCFX_LockMemory( void );
 
 #endif

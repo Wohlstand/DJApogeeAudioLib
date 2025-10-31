@@ -565,8 +565,8 @@ static void test
    track *Track;
    int   tracknum;
    int   status;
-   int   c1;
-   int   c2;
+   int   c1 = 0;
+   int   c2 = 0;
    int   TimeSet = FALSE;
 
    if ( !_MIDI_SongActive )
@@ -1432,8 +1432,8 @@ static int _MIDI_ProcessNextTick
    track *Track;
    int   tracknum;
    int   status;
-   int   c1;
-   int   c2;
+   int   c1 = 0;
+   int   c2 = 0;
    int   TimeSet = FALSE;
 
    Track = _MIDI_TrackPtr;
@@ -1691,13 +1691,13 @@ void MIDI_SetSongPosition
 
    pos = RELATIVE_BEAT( measure, beat, tick );
 
-   if ( pos < RELATIVE_BEAT( _MIDI_Measure, _MIDI_Beat, _MIDI_Tick ) )
+   if ( pos < (unsigned long)RELATIVE_BEAT( _MIDI_Measure, _MIDI_Beat, _MIDI_Tick ) )
       {
       _MIDI_ResetTracks();
       MIDI_Reset();
       }
 
-   while( RELATIVE_BEAT( _MIDI_Measure, _MIDI_Beat, _MIDI_Tick ) < pos )
+   while( (unsigned long)RELATIVE_BEAT( _MIDI_Measure, _MIDI_Beat, _MIDI_Tick ) < pos )
       {
       if ( _MIDI_ProcessNextTick() )
          {
@@ -1792,6 +1792,7 @@ static void _MIDI_InitEMIDI
    int    type;
    int    c1;
    int    c2;
+   (void) channel;
 
    type = EMIDI_GeneralMIDI;
    switch( MUSIC_SoundDevice )

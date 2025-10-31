@@ -79,7 +79,7 @@ static void    ( __interrupt __far *BLASTER_OldInt )( void );
 
 BLASTER_CONFIG BLASTER_Config =
    {
-   UNDEFINED, UNDEFINED, UNDEFINED, UNDEFINED, UNDEFINED, UNDEFINED
+   UNDEFINED, UNDEFINED, UNDEFINED, UNDEFINED, UNDEFINED, UNDEFINED, 0
    };
 
 static int BLASTER_Installed = FALSE;
@@ -198,13 +198,13 @@ int BLASTER_ErrorCode = BLASTER_Ok;
    number.  A -1 returns a pointer the current error.
 ---------------------------------------------------------------------*/
 
-char *BLASTER_ErrorString
+const char *BLASTER_ErrorString
    (
    int ErrorNumber
    )
 
    {
-   char *ErrorString;
+   const char *ErrorString;
 
    switch( ErrorNumber )
       {
@@ -765,12 +765,12 @@ void BLASTER_SetPlaybackRate
 
       BLASTER_SampleRate = rate;
 
-      if ( BLASTER_SampleRate < BLASTER_Card.MinSamplingRate )
+      if ( (int)BLASTER_SampleRate < BLASTER_Card.MinSamplingRate )
          {
          BLASTER_SampleRate = BLASTER_Card.MinSamplingRate;
          }
 
-      if ( BLASTER_SampleRate > BLASTER_Card.MaxSamplingRate )
+      if ( (int)BLASTER_SampleRate > BLASTER_Card.MaxSamplingRate )
          {
          BLASTER_SampleRate = BLASTER_Card.MaxSamplingRate;
          }
@@ -950,7 +950,7 @@ int BLASTER_SetupDMABuffer
       errorcode  = BLASTER_DMANotSet;
       }
 
-   if ( DmaChannel == UNDEFINED )
+   if ( (unsigned)DmaChannel == UNDEFINED )
       {
       BLASTER_SetErrorCode( errorcode );
       return( BLASTER_Error );
@@ -1005,7 +1005,7 @@ int BLASTER_GetCurrentPos
       DmaChannel = BLASTER_Config.Dma8;
       }
 
-   if ( DmaChannel == UNDEFINED )
+   if ( (unsigned)DmaChannel == UNDEFINED )
       {
       BLASTER_SetErrorCode( BLASTER_DMANotSet );
       return( BLASTER_Error );

@@ -208,6 +208,7 @@ typedef struct
 
 extern TIMBRE ADLIB_TimbreBank[ 256 ];
 
+#ifdef AL_MIDI_PRIVATE // Fixed "Unused function" warning
 static void AL_ResetVoices( void );
 static void AL_CalcPitchInfo( void );
 static void AL_SetVoiceTimbre( int voice );
@@ -223,5 +224,6 @@ static void AL_SetChannelVolume( int channel, int volume );
 static void AL_SetChannelExpression( int channel, int expression );
 static void AL_SetChannelPan( int channel, int pan );
 static void AL_SetChannelDetune( int channel, int detune );
+#endif
 
 #endif

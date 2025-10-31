@@ -201,6 +201,7 @@ typedef MONO16 VOLUME16[ 256 ];
 
 typedef char HARSH_CLIP_TABLE_8[ MV_NumVoices * 256 ];
 
+#ifdef MULTIVOC_PRIVATE
 static void MV_Mix( VoiceNode *voice, int buffer );
 static void MV_PlayVoice( VoiceNode *voice );
 static void MV_StopVoice( VoiceNode *voice );
@@ -222,6 +223,7 @@ static void       MV_SetVoiceMixMode( VoiceNode *voice );
 static void       MV_SetVoicePitch( VoiceNode *voice, unsigned long rate, int pitchoffset );
 static void       MV_CalcVolume( int MaxLevel );
 static void       MV_CalcPanTable( void );
+#endif
 
 #define ATR_INDEX               0x3c0
 #define STATUS_REGISTER_1       0x3da

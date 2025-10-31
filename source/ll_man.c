@@ -114,7 +114,7 @@ void LL_RemoveNode
 
    Used for determining the length of the functions to lock in memory.
 ---------------------------------------------------------------------*/
-
+#ifdef LOCKMEMORY
 static void LL_LockEnd
    (
    void
@@ -122,6 +122,7 @@ static void LL_LockEnd
 
    {
    }
+#endif
 
 
 /*---------------------------------------------------------------------

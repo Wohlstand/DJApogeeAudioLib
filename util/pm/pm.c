@@ -344,7 +344,7 @@ void LoadTimbres
       exit( 1 );
       }
 
-   if ( fread( TimbrePtr, 1, size, in ) != size )
+   if ( fread( TimbrePtr, 1, size, in ) != (size_t)size )
       {
       printf( "Unexpected end of file while reading '%s'.\n", timbrefile );
       exit(1);

@@ -85,13 +85,13 @@ int MUSIC_InitGUS( midifuncs *Funcs );
    number.  A -1 returns a pointer the current error.
 ---------------------------------------------------------------------*/
 
-char *MUSIC_ErrorString
+const char *MUSIC_ErrorString
    (
    int ErrorNumber
    )
 
    {
-   char *ErrorString;
+   const char *ErrorString;
 
    switch( ErrorNumber )
       {
@@ -688,6 +688,7 @@ int MUSIC_InitAWE32
 
    {
 #ifdef AWE32_OFF
+      (void)Funcs;
       MUSIC_SetErrorCode( MUSIC_SoundCardError );
       return( MUSIC_Error );
 #else
@@ -878,6 +879,7 @@ int MUSIC_InitGUS
 
    {
 #ifdef ULTRASOUND_OFF
+      (void)Funcs;
       MUSIC_SetErrorCode( MUSIC_SoundCardError );
       return( MUSIC_Error );
 #else
@@ -924,7 +926,7 @@ static void MUSIC_FadeRoutine
    )
 
    {
-   int volume;
+   unsigned volume;
 
    MUSIC_CurrentFadeVolume += MUSIC_FadeRate;
    if ( MUSIC_FadeLength == 0 )

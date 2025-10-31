@@ -80,7 +80,7 @@ enum fx_BLASTER_Types
 
 extern void USER_InitArgs(int argc, char **argv);
 
-char *FX_ErrorString( int ErrorNumber );
+const char *FX_ErrorString( int ErrorNumber );
 int   FX_SetupCard( int SoundCard, fx_device *device );
 int   FX_GetBlasterSettings( fx_blaster_config *blaster );
 int   FX_SetupSoundBlaster( fx_blaster_config blaster, int *MaxVoices, int *MaxSampleBits, int *MaxChannels );

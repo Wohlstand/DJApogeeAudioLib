@@ -416,7 +416,7 @@ void MV_Mix16BitMono162C
 
    do
       {
-      o1 = (MV_LeftVolume[(char)ss] >> 8) + (short)MV_LeftVolume[(char)(ss >> 8)] + 128 + *(short*)dest;
+      o1 = (MV_LeftVolume[(int)(char)ss] >> 8) + (short)MV_LeftVolume[(int)(char)(ss >> 8)] + 128 + *(short*)dest;
 
       if( o1 < -32768 )
          {
@@ -468,8 +468,8 @@ void MV_Mix16BitStereo162C
 
    do
       {
-      o1 = (MV_LeftVolume[(char)s1] >> 8) + (short)MV_LeftVolume[(char)(s1 >> 8)] + 128 + *(short*)dest;
-      o2 = (MV_RightVolume[(char)s2] >> 8) + (short)MV_RightVolume[(char)(s2 >> 8)] + 128 + *(short*)(dest + MV_RightChannelOffset);
+      o1 = (MV_LeftVolume[(int)(char)s1] >> 8) + (short)MV_LeftVolume[(int)(char)(s1 >> 8)] + 128 + *(short*)dest;
+      o2 = (MV_RightVolume[(int)(char)s2] >> 8) + (short)MV_RightVolume[(int)(char)(s2 >> 8)] + 128 + *(short*)(dest + MV_RightChannelOffset);
 
       if( o1 < -32768 )
          {

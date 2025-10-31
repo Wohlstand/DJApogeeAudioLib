@@ -61,8 +61,8 @@ int   PCFX_SetTotalVolume( int volume );
 int   PCFX_GetTotalVolume( void );
 void  PCFX_SetCallBack( void ( *function )( unsigned long ) );
 int   PCFX_Init( void );
-int   PCFX_Shutdown( void );
-   #pragma aux PCFX_Shutdown frame;
+int   PCFX_Shutdown( void ) __attribute__((noinline));
+   // #pragma aux PCFX_Shutdown frame;
 void  PCFX_UnlockMemory( void );
 int   PCFX_LockMemory( void );
 

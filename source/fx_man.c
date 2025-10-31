@@ -69,13 +69,12 @@ int FX_Installed = FALSE;
    number.  A -1 returns a pointer the current error.
 ---------------------------------------------------------------------*/
 
-char *FX_ErrorString
-   (
+const char *FX_ErrorString(
    int ErrorNumber
    )
 
    {
-   char *ErrorString;
+   const char *ErrorString = "";
 
    switch( ErrorNumber )
       {
