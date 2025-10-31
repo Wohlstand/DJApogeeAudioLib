@@ -150,6 +150,7 @@ jobs:
     - name: Pack
       shell: bash
       run: |
+        mkdir -p _packed
         zip -r -9 _packed/dj-audio-dos32.zip djaudio
 
     - name: Deploy to builds.wohlsoft.ru
