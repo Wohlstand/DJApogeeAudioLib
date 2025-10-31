@@ -2,8 +2,8 @@
 | Apogee Expanded MIDI (EMIDI) API v1.0                     |
 =============================================================
 
-Specifications created by Lee Jackson and Jim Dosä
-Support coded by Jim Dosä
+Specifications created by Lee Jackson and Jim Dos√®
+Support coded by Jim Dos√®
 
 
 FOR INTERNAL USE ONLY.  ACCESS OR USE WITHOUT EXPRESS WRITTEN
@@ -221,4 +221,3 @@ Cakewalk Pro for Windows, it is simplest to make the first measure a
 whatever you want to use for the remainder of the song right at
 measure 2.  Meter changes within the song are not affected by this,
 of course.
-

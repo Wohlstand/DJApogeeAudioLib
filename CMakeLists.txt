@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.8)
 project(ApogeeSS C ASM_MASM)
 
+include(GNUInstallDirs)
+
 include(cmake/build_props.cmake)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -72,10 +74,64 @@ target_include_directories(ass_audio PUBLIC include)
 target_include_directories(ass_audio PRIVATE include/usrhooks)
 target_link_libraries(ass_audio PUBLIC ass_usrhooks)
 
+install(TARGETS ass_audio
+        EXPORT ass_audio_targets
+        RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+        LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+        ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}")
+
+install(FILES
+        include/fx_man.h
+        include/music.h
+        include/sndcards.h
+        include/task_man.h
+        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/djaudio")
+
+install(FILES
+        include/usrhooks/usrhooks.h
+        include/usrhooks/usrhooks.c
+        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/djaudio/userhooks")
+
+make_directory(${CMAKE_BINARY_DIR}/docs-dos)
+
+add_custom_command(
+    TARGET ass_audio POST_BUILD
+    COMMAND iconv -f UTF-8 -t IBM850 -o "${CMAKE_BINARY_DIR}/docs-dos/emidiapi.txt" "${CMAKE_SOURCE_DIR}/public/emidiapi.txt"
+    COMMAND iconv -f UTF-8 -t IBM850 -o "${CMAKE_BINARY_DIR}/docs-dos/midi.txt" "${CMAKE_SOURCE_DIR}/public/midi.txt"
+    COMMAND iconv -f UTF-8 -t IBM850 -o "${CMAKE_BINARY_DIR}/docs-dos/notes.txt" "${CMAKE_SOURCE_DIR}/public/notes.txt"
+    COMMAND iconv -f UTF-8 -t IBM850 -o "${CMAKE_BINARY_DIR}/docs-dos/readme.txt" "${CMAKE_SOURCE_DIR}/public/readme.txt"
+    COMMENT "Converting documents to DOS charset..."
+)
+
+install(FILES
+        public/emidiapi.txt
+        public/midi.txt
+        public/notes.txt
+        public/readme.txt
+        DESTINATION "docs-utf8")
+
+install(FILES
+        ${CMAKE_BINARY_DIR}/docs-dos/emidiapi.txt
+        ${CMAKE_BINARY_DIR}/docs-dos/midi.txt
+        ${CMAKE_BINARY_DIR}/docs-dos/notes.txt
+        ${CMAKE_BINARY_DIR}/docs-dos/readme.txt
+        DESTINATION "docs")
+
 option(ASS_BUILD_TOOLS "Build tools" ON)
 if(ASS_BUILD_TOOLS)
     add_subdirectory(util/maketmb)
     add_subdirectory(util/pm)
     add_subdirectory(util/ps)
     add_subdirectory(util/timer)
+
+    install(FILES
+            public/CWSDPMI.EXE
+            DESTINATION "util")
 endif()
+
+set(CPACK_PACKAGE_NAME ApogeeSS)
+set(CPACK_PACKAGE_VERSION 1.0.0)
+if(NOT CPACK_PACKAGE_FILE_NAME)
+    set(CPACK_PACKAGE_FILE_NAME "dj-audio-dos32")
+endif()
+include(CPack)

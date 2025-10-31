@@ -136,24 +136,21 @@ jobs:
         export MAKEFLAGS=--keep-going
         cmake --build build --target all --config ${{ matrix.config.build_type }} --parallel 3
 
+    - name: Install
+      shell: bash
+      run: |
+        if [[ ! -z "${{ matrix.config.extra_path }}" ]]; then
+          export PATH=${{ matrix.config.extra_path }}:${PATH}
+          export QT_DIR="${{ matrix.config.qt_dir }}"
+          export QtDir="${{ matrix.config.qt_dir }}"
+        fi
+        export MAKEFLAGS=--keep-going
+        cmake --build build --target install --config ${{ matrix.config.build_type }} --parallel 3
+
     - name: Pack
       shell: bash
       run: |
-        mkdir -p _packed/djaudio/
-        mkdir -p _packed/djaudio/include
-        mkdir -p _packed/djaudio/lib
-        mkdir -p _packed/djaudio/util
-        mkdir -p _packed/djaudio/doc
-        cp -v public/*txt _packed/djaudio/doc
-        cp -rv include/* _packed/djaudio/include/
-        cp -v build/libass_audio.a _packed/djaudio/lib
-        cp -v build/util/pm/pm.exe _packed/djaudio/util/
-        cp -v build/util/ps/ps.exe _packed/djaudio/util/
-        cp -v build/util/timer/timer.exe _packed/djaudio/util/
-        cp -v util/maketmb/maketmb.exe _packed/djaudio/util/
-        cd _packed
-        zip -r -9 dj-audio-dos32.zip djaudio
-        cd ..
+        zip -r -9 _packed/dj-audio-dos32.zip djaudio
 
     - name: Deploy to builds.wohlsoft.ru
       if: success() && github.event_name != 'pull_request' && steps.event-check.outputs.is_pull_request == 'false' && steps.upload-check.outputs.available == 'true'

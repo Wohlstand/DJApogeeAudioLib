@@ -27,5 +27,5 @@ the code (very useful for musicians).
 I know I'm terrible at writing documentation, so if these files are a little
 vague, give me a call and I'll walk you through it.
 
-Jim Dosé‚
-(214)-271-1365 Ext. 221
+Jim DosÃ©
++1-(214)-271-1365 Ext. 221

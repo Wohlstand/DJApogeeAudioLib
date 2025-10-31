@@ -1,1 +1,3 @@
 *.ini           text eol=crlf
+*.txt           text eol=crlf
+CMakeLists.txt           text eol=lf

@@ -637,6 +637,8 @@ playbackstatus MV_GetNextVOCBlock
 
    voicemode = 0;
    lastblocktype = 0;
+   samplespeed = 0;
+   blocklength = 0;
    // packtype = 0;
 
    done = FALSE;
