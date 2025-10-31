@@ -57,48 +57,49 @@ typedef struct
    signed   char Velocity;
    } NEWTIMBRE;
 
-void Parse( char *filename );
+int Parse( char *filename );
 BANK *LoadIBK( char *filename );
-void WriteSource( void );
+int WriteSource( void );
 
-char TMBName[ 80 ];
-char SourceName[ 80 ];
+char TMBName[ 200 ];
+char HeaderName[ 200 ];
+char SourceName[ 200 ];
 BANK *IBKPtr = NULL;
 int  CreateSource = false;
+int  CreateHeader = false;
 int  CreateTMB    = false;
 
 NEWTIMBRE Timbres[ 256 ];
 
-void main
+int main
    (
    int argc,
    char *argv[]
    )
 
    {
-   printf( "MAKETMB v1.02 by Jim Dos‚\n" );
+   printf( "MAKETMB v1.04 by Jim Dos\x82, updated by Vitaliy Novichkov\n" );
 
    switch( argc )
       {
       case 2 :
-         Parse( argv[ 1 ] );
-         break;
+         return Parse( argv[ 1 ] );
 
       default :
          printf( "usage: MAKETMB [input file]\n" );
-         exit( 1 );
+         return( 1 );
       }
    }
 
-void Parse
+int Parse
    (
    char *fn
    )
 
    {
-   char text[ 80 ];
-   char command[ 80 ];
-   char filename[ 80 ];
+   char text[ 200 ];
+   char command[ 200 ];
+   char filename[ 200 ];
    int  patch;
    int  offset;
    int  transpose;
@@ -118,7 +119,7 @@ void Parse
    linenum = 0;
    while( 1 )
       {
-      if ( fgets( text, 80, fp ) == NULL )
+      if ( fgets( text, 200, fp ) == NULL )
          {
          break;
          }
@@ -141,7 +142,8 @@ void Parse
             {
             printf( "Syntax error on line %d\n"
                "Syntax should be: create [filename]\n", linenum );
-            exit( 1 );
+            fclose( fp );
+            return( 1 );
             }
          CreateTMB = true;
          }
@@ -151,9 +153,21 @@ void Parse
             {
             printf( "Syntax error on line %d\n"
                "Syntax should be: source [filename]\n", linenum );
-            exit( 1 );
+            fclose( fp );
+            return( 1 );
             }
          CreateSource = true;
+         }
+      else if ( strcmp( command, "header" ) == 0 )
+         {
+         if ( sscanf( text, "%s %s\n", command, HeaderName ) != 2 )
+            {
+            printf( "Syntax error on line %d\n"
+               "Syntax should be: header [filename]\n", linenum );
+            fclose( fp );
+            return( 1 );
+            }
+         CreateHeader = true;
          }
       else if ( strcmp( command, "loadibk" ) == 0 )
          {
@@ -161,7 +175,8 @@ void Parse
             {
             printf( "Syntax error on line %d\n"
                "Syntax should be: loadibk [filename]\n", linenum );
-            exit( 1 );
+            fclose( fp );
+            return( 1 );
             }
 
          if ( IBKPtr != NULL )
@@ -176,15 +191,18 @@ void Parse
             &transpose, &velocity ) != 5 )
             {
             printf( "Syntax error on line %d\n"
-               "Syntax should be: patch [destination patch] [source patch] [transpose]\n",
+               "Syntax should be: patch [destination patch] [source patch] [transpose]\n"
                "   [velocity]\n", linenum );
-            exit( 1 );
+            fclose( fp );
+            return( 1 );
             }
 
          if ( IBKPtr == NULL )
             {
             printf( "No patch set loaded on line %d.\n"
                "Use 'loadibk' to load a patch set.\n", linenum );
+            fclose( fp );
+            return( 1 );
             }
 
          patch  -= 1;
@@ -211,13 +229,16 @@ void Parse
             printf( "Syntax error on line %d\n"
                "Syntax should be: drum [key #] [source patch] [pitch] [velocity]\n",
                linenum );
-            exit( 1 );
+            fclose( fp );
+            return( 1 );
             }
 
          if ( IBKPtr == NULL )
             {
             printf( "No patch set loaded on line %d.\n"
                "Use 'loadibk' to load a patch set.\n", linenum );
+            fclose( fp );
+            return( 1 );
             }
 
          patch  += 128;
@@ -239,7 +260,8 @@ void Parse
       else
          {
          printf( "Syntax error on line %d : %s\n", linenum, command );
-         exit( 1 );
+         fclose( fp );
+         return( 1 );
          }
       }
 
@@ -247,7 +269,9 @@ void Parse
 
    if ( CreateSource )
       {
-      WriteSource();
+      int ret = WriteSource();
+      if ( ret != 0)
+         return ret;
       }
 
    if ( CreateTMB )
@@ -256,7 +280,7 @@ void Parse
       if ( fp == NULL )
          {
          perror( TMBName );
-         exit( 1 );
+         return( 1 );
          }
 
       if ( fwrite( Timbres, sizeof( Timbres ), 1, fp ) != 1 )
@@ -266,6 +290,7 @@ void Parse
 
       fclose( fp );
       }
+   return( 0 );
    }
 
 BANK *LoadIBK
@@ -288,6 +313,7 @@ BANK *LoadIBK
    if ( TimbrePtr == NULL )
       {
       perror( filename );
+      fclose( in );
       return( NULL );
       }
 
@@ -303,7 +329,7 @@ BANK *LoadIBK
    return( TimbrePtr );
    }
 
-void WriteSource
+int WriteSource
    (
    void
    )
@@ -311,33 +337,58 @@ void WriteSource
    {
    FILE *fp;
    int   i;
+   const char *struct_prototype =
+      "typedef struct\n"
+      "   {\n"
+      "   unsigned char SAVEK[ 2 ];\n"
+      "   unsigned char Level[ 2 ];\n"
+      "   unsigned char Env1[ 2 ];\n"
+      "   unsigned char Env2[ 2 ];\n"
+      "   unsigned char Wave[ 2 ];\n"
+      "   unsigned char Feedback;\n"
+      "   signed   char Transpose;\n"
+      "   signed   char Velocity;\n"
+      "   } TIMBRE;\n";
+
+   if ( CreateHeader )
+      {
+         fp = fopen( HeaderName, "w" );
+         if ( fp == NULL )
+         {
+         perror( SourceName );
+         return( 1 );
+         }
+
+         fprintf( fp, "%s", struct_prototype);
+         fprintf( fp, "\n"
+                      "extern TIMBRE ADLIB_TimbreBank[ 256 ];\n\n");
+         fclose( fp );
+      }
 
    fp = fopen( SourceName, "w" );
    if ( fp == NULL )
       {
       perror( SourceName );
-      exit( 1 );
+      return( 1 );
       }
 
-   fprintf( fp, "typedef struct\n"
-           "   {\n"
-           "   unsigned char SAVEK[ 2 ];\n"
-           "   unsigned char Level[ 2 ];\n"
-           "   unsigned char Env1[ 2 ];\n"
-           "   unsigned char Env2[ 2 ];\n"
-           "   unsigned char Wave[ 2 ];\n"
-           "   unsigned char Feedback;\n"
-           "   signed   char Transpose;\n"
-           "   signed   char Velocity;\n"
-           "   } TIMBRE;\n"
-           "\n"
-           "TIMBRE ADLIB_TimbreBank[ 256 ] =\n"
-           "   {\n" );
+   if ( CreateHeader )
+      {
+      fprintf( fp, "#include \"%s\"\n", HeaderName);
+      }
+   else
+      {
+      fprintf( fp, "%s", struct_prototype);
+      }
+
+   fprintf( fp, "\n"
+              "TIMBRE ADLIB_TimbreBank[ 256 ] =\n"
+              "   {\n");
 
    for( i = 0; i < 256; i++ )
       {
       fprintf( fp, "      { { %d, %d }, { %d, %d }, { %d, %d }, { %d, %d }, "
-              "{ %d, %d }, %d, %d }",
+              "{ %d, %d }, %d, %d, %d }",
               Timbres[ i ].SAVEK[ 0 ],
               Timbres[ i ].SAVEK[ 1 ],
               Timbres[ i ].Level[ 0 ],
@@ -349,7 +400,8 @@ void WriteSource
               Timbres[ i ].Wave[ 0 ],
               Timbres[ i ].Wave[ 1 ],
               Timbres[ i ].Feedback,
-              Timbres[ i ].Transpose
+              Timbres[ i ].Transpose,
+              Timbres[ i ].Velocity
               );
       if ( i < 255 )
          {
@@ -360,4 +412,5 @@ void WriteSource
    fprintf( fp, "   };\n" );
 
    fclose( fp );
+   return 0;
    }
