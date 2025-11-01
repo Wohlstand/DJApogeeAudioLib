@@ -116,6 +116,7 @@ int DPMI_CallRealModeFunction
    regs.x.es = callregs->ES;
    regs.x.fs = callregs->FS;
    regs.x.gs = callregs->GS;
+
    regs.x.ip = callregs->IP;
    regs.x.cs = callregs->CS;
 
@@ -126,6 +127,14 @@ int DPMI_CallRealModeFunction
       {
       return( DPMI_Error );
       }
+
+   // Reply
+   callregs->EBX = regs.d.ebx;
+   callregs->ECX = regs.d.ecx;
+   callregs->EDX = regs.d.edx;
+   callregs->Flags = regs.x.flags;
+   callregs->SS = regs.x.ss;
+   callregs->SP = regs.x.sp;
 
    return( DPMI_Ok );
 
