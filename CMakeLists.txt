@@ -96,10 +96,10 @@ make_directory(${CMAKE_BINARY_DIR}/docs-dos)
 
 add_custom_command(
     TARGET ass_audio POST_BUILD
-    COMMAND iconv -f UTF-8 -t IBM850 -o "${CMAKE_BINARY_DIR}/docs-dos/emidiapi.txt" "${CMAKE_SOURCE_DIR}/public/emidiapi.txt"
-    COMMAND iconv -f UTF-8 -t IBM850 -o "${CMAKE_BINARY_DIR}/docs-dos/midi.txt" "${CMAKE_SOURCE_DIR}/public/midi.txt"
-    COMMAND iconv -f UTF-8 -t IBM850 -o "${CMAKE_BINARY_DIR}/docs-dos/notes.txt" "${CMAKE_SOURCE_DIR}/public/notes.txt"
-    COMMAND iconv -f UTF-8 -t IBM850 -o "${CMAKE_BINARY_DIR}/docs-dos/readme.txt" "${CMAKE_SOURCE_DIR}/public/readme.txt"
+    COMMAND iconv -f UTF-8 -t IBM850 -o "${CMAKE_BINARY_DIR}/docs-dos/emidiapi.txt" "${CMAKE_CURRENT_SOURCE_DIR}/public/emidiapi.txt"
+    COMMAND iconv -f UTF-8 -t IBM850 -o "${CMAKE_BINARY_DIR}/docs-dos/midi.txt" "${CMAKE_CURRENT_SOURCE_DIR}/public/midi.txt"
+    COMMAND iconv -f UTF-8 -t IBM850 -o "${CMAKE_BINARY_DIR}/docs-dos/notes.txt" "${CMAKE_CURRENT_SOURCE_DIR}/public/notes.txt"
+    COMMAND iconv -f UTF-8 -t IBM850 -o "${CMAKE_BINARY_DIR}/docs-dos/readme.txt" "${CMAKE_CURRENT_SOURCE_DIR}/public/readme.txt"
     COMMENT "Converting documents to DOS charset..."
 )
 
