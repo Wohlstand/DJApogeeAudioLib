@@ -5,10 +5,15 @@
 Specifications created by Lee Jackson and Jim Dosè
 Support coded by Jim Dosè
 
-
+=============================================================
 FOR INTERNAL USE ONLY.  ACCESS OR USE WITHOUT EXPRESS WRITTEN
 PERMISSION FROM APOGEE SOFTWARE, LTD., 3D REALMS ENTERTAINMENT, OR
 ACTION ENTERTAINMENT, INC., IS STRICTLY PROHIBITED.
+=============================================================
+EDIT: The notice above is not actual since the code and all
+these documents were been released under GNU GPLv2+ license
+in the year 2002.
+=============================================================
 
 
 Copyright (c) 1995 Apogee Software Ltd.  All Rights Reserved.
